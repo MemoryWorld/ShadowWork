@@ -1,0 +1,41 @@
+{
+  "id": "mock-task-001",
+  "title": "高并发游戏排行榜系统",
+  "description": "实现一个支持高并发的游戏排行榜系统。系统需要处理每秒数千次的分数更新请求，并能实时返回前100名玩家排名。",
+  "difficulty": 94,
+  "category": "High-Concurrency",
+  "techStack": ["React", "Redis", "Node.js"],
+  "estimatedTime": 45,
+  "requirements": [
+    "实现分数更新的防抖机制",
+    "使用 Redis Sorted Set 优化排行榜查询",
+    "实现前端实时更新显示",
+    "通过所有单元测试"
+  ],
+  "files": {
+    "package.json": {
+      "name": "leaderboard-challenge",
+      "version": "1.0.0",
+      "type": "module",
+      "scripts": {
+        "dev": "node server.js",
+        "test": "node test.js"
+      },
+      "dependencies": {
+        "express": "4.18.2",
+        "redis": "4.6.5",
+        "uuid": "9.0.0"
+      }
+    },
+    "server.js": {
+      "content": "import express from 'express';\nimport { createClient } from 'redis';\n\nconst app = express();\napp.use(express.json());\n\nconst redis = createClient();\nawait redis.connect();\n\n// TODO: 实现排行榜 API\napp.post('/api/score', async (req, res) => {\n  const { playerId, score } = req.body;\n  // 你的代码：使用 Redis ZADD 更新分数\n  res.json({ success: true });\n});\n\napp.get('/api/leaderboard', async (req, res) => {\n  // 你的代码：使用 Redis ZREVRANGE 获取前100名\n  res.json({ leaderboard: [] });\n});\n\napp.listen(3000, () => console.log('Server running on port 3000'));\n"
+    },
+    "test.js": {
+      "content": "import assert from 'assert';\n\n// TODO: 实现测试用例\nconsole.log('All tests passed!');\n"
+    },
+    "README.md": {
+      "content": "# 游戏排行榜挑战\n\n## 任务\n实现高并发排行榜系统\n\n## 运行\n```bash\nnpm install\nnpm run dev\n```\n\n## 测试\n```bash\nnpm test\n```\n"
+    }
+  }
+}
+
