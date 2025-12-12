@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import rrweb from 'rrweb';
+import * as rrweb from 'rrweb';
 import type { RecordingEvent } from '@/types';
 
 /**

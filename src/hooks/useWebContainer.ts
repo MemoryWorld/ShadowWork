@@ -7,51 +7,102 @@ import type { Task } from '@/types';
  * 
  * WebContainer provides a Node.js runtime in the browser,
  * allowing users to run real code challenges.
+ * 
+ * CRITICAL: Uses global singleton to prevent "Unable to create more instances" error
  */
+
+// Global singleton instance - prevents multiple WebContainer instances
+let globalWebContainerInstance: WebContainer | null = null;
+let globalBootPromise: Promise<WebContainer> | null = null;
 
 export function useWebContainer() {
   const [container, setContainer] = useState<WebContainer | null>(null);
   const [isBooting, setIsBooting] = useState(false);
   const [bootError, setBootError] = useState<string | null>(null);
-  const containerRef = useRef<WebContainer | null>(null);
+  const isMounted = useRef(true);
 
   useEffect(() => {
+    isMounted.current = true;
+    
     // Boot WebContainer on mount
     bootContainer();
 
     return () => {
-      // Cleanup on unmount
-      if (containerRef.current) {
-        containerRef.current.teardown();
-      }
+      isMounted.current = false;
+      // Note: We DON'T teardown the global instance on unmount
+      // to prevent "Unable to create more instances" errors
+      // The instance will be reused across component remounts
     };
   }, []);
 
   const bootContainer = async () => {
-    if (containerRef.current || isBooting) {
+    // If already booted, just use the existing instance
+    if (globalWebContainerInstance) {
+      console.log('[WebContainer] Using existing instance');
+      if (isMounted.current) {
+        setContainer(globalWebContainerInstance);
+      }
       return;
     }
 
-    console.log('[WebContainer] Booting...');
-    setIsBooting(true);
-    setBootError(null);
+    // If currently booting, wait for that promise
+    if (globalBootPromise) {
+      console.log('[WebContainer] Waiting for existing boot process...');
+      if (isMounted.current) {
+        setIsBooting(true);
+      }
+      try {
+        const instance = await globalBootPromise;
+        if (isMounted.current) {
+          setContainer(instance);
+          setIsBooting(false);
+        }
+      } catch (error) {
+        if (isMounted.current) {
+          const message = error instanceof Error ? error.message : 'Failed to boot WebContainer';
+          setBootError(message);
+          setIsBooting(false);
+        }
+      }
+      return;
+    }
+
+    // Start new boot process
+    console.log('[WebContainer] Booting new instance...');
+    if (isMounted.current) {
+      setIsBooting(true);
+      setBootError(null);
+    }
+
+    globalBootPromise = WebContainer.boot();
 
     try {
-      const instance = await WebContainer.boot();
-      containerRef.current = instance;
-      setContainer(instance);
-      console.log('[WebContainer] Boot successful');
+      const instance = await globalBootPromise;
+      globalWebContainerInstance = instance;
+      
+      if (isMounted.current) {
+        setContainer(instance);
+        console.log('[WebContainer] Boot successful');
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to boot WebContainer';
       console.error('[WebContainer] Boot failed:', message);
-      setBootError(message);
+      
+      if (isMounted.current) {
+        setBootError(message);
+      }
+      
+      // Clear the failed boot promise so we can retry
+      globalBootPromise = null;
     } finally {
-      setIsBooting(false);
+      if (isMounted.current) {
+        setIsBooting(false);
+      }
     }
   };
 
   const loadTask = async (task: Task) => {
-    if (!containerRef.current) {
+    if (!globalWebContainerInstance) {
       throw new Error('WebContainer not ready');
     }
 
@@ -76,11 +127,11 @@ export function useWebContainer() {
       }
     }
 
-    await containerRef.current.mount(files);
+    await globalWebContainerInstance.mount(files);
 
     // Install dependencies
     console.log('[WebContainer] Installing dependencies...');
-    const installProcess = await containerRef.current.spawn('npm', ['install']);
+    const installProcess = await globalWebContainerInstance.spawn('npm', ['install']);
     const installExitCode = await installProcess.exit;
 
     if (installExitCode !== 0) {
@@ -91,29 +142,29 @@ export function useWebContainer() {
   };
 
   const runCommand = async (command: string, args: string[] = []) => {
-    if (!containerRef.current) {
+    if (!globalWebContainerInstance) {
       throw new Error('WebContainer not ready');
     }
 
     console.log(`[WebContainer] Running: ${command} ${args.join(' ')}`);
-    const process = await containerRef.current.spawn(command, args);
+    const process = await globalWebContainerInstance.spawn(command, args);
     return process;
   };
 
   const writeFile = async (path: string, content: string) => {
-    if (!containerRef.current) {
+    if (!globalWebContainerInstance) {
       throw new Error('WebContainer not ready');
     }
 
-    await containerRef.current.fs.writeFile(path, content);
+    await globalWebContainerInstance.fs.writeFile(path, content);
   };
 
   const readFile = async (path: string): Promise<string> => {
-    if (!containerRef.current) {
+    if (!globalWebContainerInstance) {
       throw new Error('WebContainer not ready');
     }
 
-    const content = await containerRef.current.fs.readFile(path, 'utf-8');
+    const content = await globalWebContainerInstance.fs.readFile(path, 'utf-8');
     return content;
   };
 

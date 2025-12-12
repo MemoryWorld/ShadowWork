@@ -20,7 +20,11 @@ export function middleware(request: NextRequest) {
 }
 
 // Apply to all routes - this is critical for WebContainers
+// Include root path, all paths, and _next internal routes
 export const config = {
-  matcher: '/:path*',
+  matcher: [
+    '/',
+    '/((?!_next/static|_next/image|favicon.ico).*)',
+  ],
 };
 
