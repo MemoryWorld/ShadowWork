@@ -38,7 +38,21 @@ function ChallengePageContent() {
       setIsLoading(true);
       setError(null);
 
+      const source = searchParams.get('source');
       const mockMode = searchParams.get('mock') === 'true';
+
+      // Check if using custom generated task
+      if (source === 'custom') {
+        const customTask = localStorage.getItem('custom_task');
+        if (customTask) {
+          console.log('[Challenge] Loading custom task from localStorage');
+          setTask(JSON.parse(customTask));
+          setIsLoading(false);
+          return;
+        }
+      }
+
+      // Otherwise fetch from API
       const response = await fetch(`/api/generate-task?mock=${mockMode}`);
 
       if (!response.ok) {
