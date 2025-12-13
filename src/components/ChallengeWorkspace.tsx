@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { CodeEditor } from './CodeEditor';
 import { CountdownTimer } from './CountdownTimer';
 import { TerminalBootSequence } from './TerminalBootSequence';
@@ -34,7 +35,8 @@ export function ChallengeWorkspace({ task, onSubmit }: ChallengeWorkspaceProps) 
   const [sessionStartTime, setSessionStartTime] = useState(Date.now());
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionResult, setSubmissionResult] = useState<SubmissionResponsePayload | null>(null);
-  const [isDarkMode, setIsDarkMode] = useState(true);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const router = useRouter();
 
   const { isReady, isBooting, bootError, loadTask, runCommand, writeFile, readFile } =
     useWebContainer();
@@ -170,8 +172,20 @@ export function ChallengeWorkspace({ task, onSubmit }: ChallengeWorkspaceProps) 
 
       if (submission) {
         setSubmissionResult(submission);
-        // Show success modal with confetti
-        setShowSuccessModal(true);
+        // persist for success page
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(
+            'shadowwork_last_submission',
+            JSON.stringify({
+              title: task.title,
+              points: submission.points,
+              offerQualified: submission.offerQualified,
+              evaluation: submission.evaluation,
+              recordingUrl: submission.recordingUrl,
+            })
+          );
+        }
+        router.push('/success');
       } else {
         setOutput('Submission failed. Please try again.');
       }
