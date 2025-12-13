@@ -90,19 +90,7 @@ export function SuccessModal({
           </p>
         </div>
 
-        {/* Points & Stats */}
         <div className="p-8">
-          <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-gray-600">Points Earned</span>
-              <span className="text-3xl font-bold text-blue-600">+{points}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600">Total Points</span>
-              <span className="text-2xl font-bold text-purple-600">{totalPoints}</span>
-            </div>
-          </div>
-
           {/* Offer Qualified Badge */}
           {offerQualified && (
             <div className="bg-gradient-to-r from-yellow-100 to-orange-100 border-2 border-yellow-400 rounded-xl p-4 mb-6">
