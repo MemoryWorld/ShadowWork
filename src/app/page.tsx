@@ -3,7 +3,12 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { getMockUser, logout, type MockUser } from '@/lib/mockAuth';
+import { motion } from 'framer-motion';
+import { fadeUp } from '@/lib/animation';
+import { Background } from '../components/ui/Background';
+import { User } from 'lucide-react';
 
+import { ProfileModal } from '@/components/ProfileModal';
 /**
  * Landing Page
  * 
@@ -15,6 +20,7 @@ export default function HomePage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [user, setUser] = useState<MockUser | null>(null);
+  const [profileOpen, setProfileOpen] = useState(false);
 
   // Check if user is logged in
   useEffect(() => {
@@ -45,8 +51,11 @@ export default function HomePage() {
     setUser(null);
   };
 
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+        <div className="min-h-screen font-sans text-slate-900 selection:bg-purple-100 selection:text-purple-700 relative">
+      <Background />
+
       {/* Header */}
       <header className="bg-white/80 backdrop-blur-sm border-b">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -55,6 +64,18 @@ export default function HomePage() {
             <span className="text-xl font-bold text-gray-900">ShadowWork</span>
           </div>
           <nav className="flex items-center gap-6">
+          <button
+            onClick={() => setProfileOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium
+                      border border-slate-300 rounded-lg
+                      text-slate-700
+                      hover:bg-slate-50 hover:border-slate-400
+                      transition-colors"
+          >
+            <User size={16} />
+            <span>Profile</span>
+          </button>
+
             <a href="#features" className="text-gray-600 hover:text-gray-900">Features</a>
             <a href="#how-it-works" className="text-gray-600 hover:text-gray-900">How It Works</a>
             <a href="/generate" className="text-blue-600 hover:text-blue-800 font-medium">🔬 Generator</a>
@@ -93,21 +114,43 @@ export default function HomePage() {
             Privacy-First Technical Assessment
           </div>
 
-          <h1 className="text-6xl font-bold text-gray-900 mb-6 leading-tight">
+          {/* <h1 className="text-6xl font-bold text-gray-900 mb-6 leading-tight">
             Zero-Resume,
             <br />
             <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
               Proof-of-Work
             </span>
-          </h1>
-
-          <p className="text-xl text-gray-600 mb-12 leading-relaxed">
+          </h1> */}
+          <motion.h1
+            variants={fadeUp}
+            initial="hidden"
+            animate="visible"
+            custom={0}
+            className="text-6xl font-bold text-gray-900 mb-6 leading-tight"
+          >
+            Zero-Resume,
+            <br />
+            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              Proof-of-Work
+            </span>
+          </motion.h1>
+          {/* <p className="text-xl text-gray-600 mb-12 leading-relaxed">
             Turn real-world engineering issues into ephemeral, browser-based coding challenges.
             <br />
             No IP leakage. No resume bias. Pure skill demonstration.
-          </p>
-
-          <div className="flex items-center justify-center gap-4">
+          </p> */}
+          <motion.p
+            variants={fadeUp}
+            initial="hidden"
+            animate="visible"
+            custom={1}
+            className="text-xl text-gray-600 mb-12 leading-relaxed"
+          >
+            Turn real-world engineering issues into ephemeral, browser-based coding challenges.
+            <br />
+            No IP leakage. No resume bias. Pure skill demonstration.
+          </motion.p>
+          {/* <div className="flex items-center justify-center gap-4">
             <button
               onClick={handleStartChallenge}
               disabled={isLoading}
@@ -118,7 +161,26 @@ export default function HomePage() {
             <button className="px-8 py-4 bg-white border-2 border-gray-200 text-gray-700 rounded-lg text-lg font-semibold hover:border-gray-300 hover:shadow-lg transition-all">
               Learn More
             </button>
-          </div>
+          </div> */}
+          <motion.div
+            variants={fadeUp}
+            initial="hidden"
+            animate="visible"
+            custom={0.16}
+            className="flex items-center justify-center gap-4"
+          >
+            <button
+              onClick={handleStartChallenge}
+              disabled={isLoading}
+              className="px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg text-lg font-semibold hover:shadow-xl transition-all disabled:opacity-50"
+            >
+              {isLoading ? 'Loading...' : 'Start Challenge'}
+            </button>
+
+            <button className="px-8 py-4 bg-white border-2 border-gray-200 text-gray-700 rounded-lg text-lg font-semibold hover:border-gray-300 hover:shadow-lg transition-all">
+              Learn More
+            </button>
+          </motion.div>
 
           <p className="text-sm text-gray-500 mt-6">
             {user ? (
@@ -169,6 +231,11 @@ export default function HomePage() {
           <p className="mt-2">Built with Next.js, WebContainers, and rrweb</p>
         </div>
       </footer>
+      <ProfileModal
+  isOpen={profileOpen}
+  onClose={() => setProfileOpen(false)}
+/>
+
     </div>
   );
 }
