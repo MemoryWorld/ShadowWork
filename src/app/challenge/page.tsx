@@ -4,7 +4,7 @@ import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { ChallengeWorkspace } from '@/components/ChallengeWorkspace';
 import { getMockUser } from '@/lib/mockAuth';
-import type { Task } from '@/types';
+import type { CodeFileSnapshot, SubmissionResponsePayload, Task } from '@/types';
 
 /**
  * Challenge Page
@@ -68,8 +68,12 @@ function ChallengePageContent() {
     }
   };
 
-  const handleSubmit = async (events: any[], sessionTime: number) => {
-    if (!task || !user) return;
+  const handleSubmit = async (
+    events: any[],
+    codeSnapshot: CodeFileSnapshot[],
+    sessionTime: number
+  ): Promise<SubmissionResponsePayload | null> => {
+    if (!task || !user) return null;
 
     try {
       console.log('[Challenge] Submitting solution...');
@@ -81,10 +85,17 @@ function ChallengePageContent() {
           userId: user.id,
           userEmail: user.email,
           taskId: task.id,
+          taskContext: {
+            title: task.title,
+            description: task.description,
+            requirements: task.requirements,
+            estimatedTime: task.estimatedTime,
+          },
           events,
           difficulty: task.difficulty,
           category: task.category,
           techStack: task.techStack,
+          codeSnapshot,
           sessionTime,
         }),
       });
@@ -93,14 +104,14 @@ function ChallengePageContent() {
         throw new Error('Submission failed');
       }
 
-      const result = await response.json();
+      const result: SubmissionResponsePayload = await response.json();
       console.log('[Challenge] Submission successful:', result);
 
-      // Note: Success modal is already shown by ChallengeWorkspace component
-      // No need for alert here
+      return result;
     } catch (error) {
       console.error('[Challenge] Submission error:', error);
       alert('Failed to submit challenge. Please try again.');
+      return null;
     }
   };
 
@@ -149,4 +160,3 @@ export default function ChallengePage() {
     </Suspense>
   );
 }
-
