@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { ChallengeWorkspace } from '@/components/ChallengeWorkspace';
+import { getMockUser } from '@/lib/mockAuth';
 import type { Task } from '@/types';
 
 /**
@@ -13,13 +14,24 @@ import type { Task } from '@/types';
 
 function ChallengePageContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [task, setTask] = useState<Task | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [user, setUser] = useState(getMockUser());
 
   useEffect(() => {
+    // Check if user is logged in
+    const currentUser = getMockUser();
+    if (!currentUser) {
+      // Redirect to login if not authenticated
+      alert('Please sign in to access challenges');
+      router.push('/login');
+      return;
+    }
+    setUser(currentUser);
     loadTask();
-  }, [searchParams]);
+  }, [searchParams, router]);
 
   const loadTask = async () => {
     try {
@@ -42,8 +54,8 @@ function ChallengePageContent() {
     }
   };
 
-  const handleSubmit = async (events: any[]) => {
-    if (!task) return;
+  const handleSubmit = async (events: any[], sessionTime: number) => {
+    if (!task || !user) return;
 
     try {
       console.log('[Challenge] Submitting solution...');
@@ -52,12 +64,14 @@ function ChallengePageContent() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: 'user-' + Math.random().toString(36).substring(7), // TODO: Get from auth
+          userId: user.id,
+          userEmail: user.email,
           taskId: task.id,
           events,
           difficulty: task.difficulty,
           category: task.category,
           techStack: task.techStack,
+          sessionTime,
         }),
       });
 
@@ -68,11 +82,8 @@ function ChallengePageContent() {
       const result = await response.json();
       console.log('[Challenge] Submission successful:', result);
 
-      // Show success message
-      alert('Challenge submitted successfully! Your replay has been sent to the company.');
-
-      // Redirect to success page
-      window.location.href = '/success';
+      // Note: Success modal is already shown by ChallengeWorkspace component
+      // No need for alert here
     } catch (error) {
       console.error('[Challenge] Submission error:', error);
       alert('Failed to submit challenge. Please try again.');
