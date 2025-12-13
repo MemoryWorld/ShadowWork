@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import confetti from 'canvas-confetti';
+import type { EvaluationResult } from '@/types';
 
 /**
  * Success Modal with Confetti
@@ -16,6 +17,7 @@ interface SuccessModalProps {
   points?: number;
   totalPoints?: number;
   offerQualified?: boolean;
+  evaluation?: EvaluationResult | null;
 }
 
 export function SuccessModal({ 
@@ -23,7 +25,8 @@ export function SuccessModal({
   onClose, 
   points = 100,
   totalPoints = 100,
-  offerQualified = false 
+  offerQualified = false,
+  evaluation = null,
 }: SuccessModalProps) {
   
   useEffect(() => {
@@ -87,19 +90,7 @@ export function SuccessModal({
           </p>
         </div>
 
-        {/* Points & Stats */}
         <div className="p-8">
-          <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-gray-600">Points Earned</span>
-              <span className="text-3xl font-bold text-blue-600">+{points}</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600">Total Points</span>
-              <span className="text-2xl font-bold text-purple-600">{totalPoints}</span>
-            </div>
-          </div>
-
           {/* Offer Qualified Badge */}
           {offerQualified && (
             <div className="bg-gradient-to-r from-yellow-100 to-orange-100 border-2 border-yellow-400 rounded-xl p-4 mb-6">
@@ -114,6 +105,46 @@ export function SuccessModal({
                   </p>
                 </div>
               </div>
+            </div>
+          )}
+
+          {evaluation && (
+            <div className="mb-6 border border-gray-200 rounded-xl p-4">
+              <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <span className="text-xl">🤖</span> AI Evaluation Summary
+              </h3>
+              <div className="grid grid-cols-2 gap-3">
+                {(['understanding', 'implementation', 'validation', 'communication'] as const).map((key) => (
+                  <div key={key} className="bg-gray-50 rounded-lg p-3">
+                    <p className="text-xs uppercase text-gray-500">
+                      {key.charAt(0).toUpperCase() + key.slice(1)}
+                    </p>
+                    <p className="text-xl font-bold text-gray-900">
+                      {evaluation.scores[key]}/25
+                    </p>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 flex flex-wrap gap-4 text-sm text-gray-600">
+                <span className="font-semibold text-gray-900">
+                  Total: {evaluation.scores.total}/100
+                </span>
+                <span>Match Score: {evaluation.scores.matchScore}/100</span>
+              </div>
+
+              {evaluation.nextInterviewQuestions?.length > 0 && (
+                <div className="mt-4">
+                  <p className="text-xs uppercase text-gray-500">Suggested follow-ups</p>
+                  <ul className="mt-2 space-y-1 text-sm text-gray-600">
+                    {evaluation.nextInterviewQuestions.slice(0, 2).map((question, index) => (
+                      <li key={index} className="flex items-start gap-2">
+                        <span className="text-blue-500 mt-0.5">•</span>
+                        <span>{question}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           )}
 
@@ -156,4 +187,3 @@ export function SuccessModal({
     </div>
   );
 }
-

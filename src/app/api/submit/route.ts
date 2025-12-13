@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { sendSlackNotification } from '@/lib/slack';
+import { evaluateSubmission } from '@/lib/evaluator';
+import type { CodeFileSnapshot, EvaluationResult } from '@/types';
 
 /**
  * API Route: /api/submit
@@ -21,7 +23,18 @@ const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { userId, userEmail, taskId, events, difficulty, category, techStack, sessionTime } = body;
+    const {
+      userId,
+      userEmail,
+      taskId,
+      taskContext,
+      events,
+      difficulty,
+      category,
+      techStack,
+      codeSnapshot = [],
+      sessionTime,
+    } = body;
     
     console.log('[submit] Received submission from:', userEmail || userId);
     
@@ -30,11 +43,42 @@ export async function POST(request: NextRequest) {
     const speedBonus = sessionTime && sessionTime < 1800 ? 50 : 0; // Bonus if under 30 min
     const totalPoints = basePoints + speedBonus;
 
+    const normalizedSnapshot: CodeFileSnapshot[] = Array.isArray(codeSnapshot)
+      ? codeSnapshot
+      : [];
+
+    let evaluationResult: EvaluationResult | null = null;
+
+    if (normalizedSnapshot.length > 0) {
+      const evaluation = await evaluateSubmission({
+        taskContext,
+        codeSnapshot: normalizedSnapshot,
+        difficulty,
+        category,
+        techStack,
+        sessionTime,
+      });
+
+      if (evaluation.success && evaluation.data) {
+        evaluationResult = evaluation.data;
+      } else if (evaluation.error) {
+        console.warn('[submit] Evaluation skipped:', evaluation.error);
+      }
+    }
+
     if (!supabase) {
       console.warn('[submit] Supabase not configured - skipping upload');
       return NextResponse.json({ 
         success: true, 
-        message: 'Submission received (Supabase not configured)' 
+        message: 'Submission received (Supabase not configured)',
+        evaluation: evaluationResult,
+        recordingUrl: null,
+        points: {
+          earned: totalPoints,
+          base: basePoints,
+          bonus: speedBonus,
+          total: totalPoints,
+        },
       });
     }
 
@@ -71,6 +115,8 @@ export async function POST(request: NextRequest) {
         points_earned: basePoints,
         speed_bonus: speedBonus,
         session_time: sessionTime,
+        code_snapshot: normalizedSnapshot,
+        evaluation_json: evaluationResult,
         completed_at: new Date().toISOString(),
       });
 
@@ -136,6 +182,7 @@ export async function POST(request: NextRequest) {
         total: userTotalPoints,
       },
       offerQualified,
+      evaluation: evaluationResult,
     });
   } catch (error) {
     console.error('[submit] Error:', error);
@@ -145,5 +192,4 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
 

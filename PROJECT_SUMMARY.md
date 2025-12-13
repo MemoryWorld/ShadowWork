@@ -88,6 +88,25 @@ curl -I http://localhost:3000
 
 ---
 
+### 模块 E: 代码存档 + AI 评分 ✅
+
+**文件**:
+- `src/components/ChallengeWorkspace.tsx` - 提交前提取代码快照
+- `src/app/challenge/page.tsx` - 将代码 + 元数据发送到 `/api/submit`
+- `src/app/api/submit/route.ts` - Supabase 存储 & AI evaluator 入口
+- `src/lib/evaluator.ts` - 基于 `specMd.md` 的评分器
+- `src/components/SuccessModal.tsx` - 将评分回传给候选人
+- `supabase-setup.sql` - 新增 `code_snapshot`/`evaluation_json` 等字段
+
+**特性**:
+- [x] 保存每个任务文件的最终代码内容
+- [x] 统一 JSON 结构（path + content）写入数据库
+- [x] LLM evaluator 读取 `specMd.md`，输出严格 JSON 评分
+- [x] API 响应携带评分、Match Score、风险提示
+- [x] 成功弹窗展示四维度得分 & 下一步追问
+
+---
+
 ### 隐私保护 ✅
 
 **文件**: `src/lib/slack.ts`, `src/app/api/submit/route.ts`
@@ -553,4 +572,3 @@ http://localhost:3000
 **功能完整度**: 100%  
 
 🎊 **项目交付完成！** 🎊
-
