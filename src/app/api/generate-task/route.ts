@@ -3,6 +3,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { getLatestBugFix, parseRepoUrl } from '@/lib/github-scraper';
 import { generateTaskFromDiff, analyzeDiffComplexity } from '@/lib/task-generator';
+import type { Task } from '@/types';
 
 /**
  * API Route: /api/generate-task
@@ -16,6 +17,27 @@ import { generateTaskFromDiff, analyzeDiffComplexity } from '@/lib/task-generato
  * 4. Privacy-First: Never includes original PR IDs
  */
 
+const MOCK_TASK_PATH = path.join(process.cwd(), 'src/data/mock-task.json');
+
+async function saveMockTask(task: Task) {
+  if (!task || !task.files) {
+    console.warn('[generate-task] Skip updating mock task - invalid payload');
+    return;
+  }
+
+  try {
+    await fs.writeFile(MOCK_TASK_PATH, JSON.stringify(task, null, 2), 'utf-8');
+    console.log('[generate-task] mock-task.json updated with latest task');
+  } catch (error) {
+    console.error('[generate-task] Failed to update mock-task.json:', error);
+  }
+}
+
+async function loadMockTask() {
+  const mockData = await fs.readFile(MOCK_TASK_PATH, 'utf-8');
+  return JSON.parse(mockData);
+}
+
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
@@ -26,9 +48,7 @@ export async function GET(request: NextRequest) {
     // Mock Mode Switch - for offline testing
     if (mockMode) {
       console.log('[generate-task] Using Mock Mode');
-      const mockPath = path.join(process.cwd(), 'src/data/mock-task.json');
-      const mockData = await fs.readFile(mockPath, 'utf-8');
-      return NextResponse.json(JSON.parse(mockData));
+      return NextResponse.json(await loadMockTask());
     }
 
     // GitHub Real-World Mode
@@ -61,15 +81,16 @@ export async function GET(request: NextRequest) {
         
         console.log('[generate-task] Task generated:', task.title);
         
+        // Persist latest generated task for offline mock mode
+        await saveMockTask(task as Task);
+        
         return NextResponse.json(task);
       } catch (error) {
         console.error('[generate-task] GitHub pipeline failed:', error);
         
         // Fallback to mock data with warning
         console.warn('[generate-task] Falling back to mock data');
-        const mockPath = path.join(process.cwd(), 'src/data/mock-task.json');
-        const mockData = await fs.readFile(mockPath, 'utf-8');
-        const fallbackTask = JSON.parse(mockData);
+        const fallbackTask = await loadMockTask();
         
         // Add warning flag
         fallbackTask._warning = 'Generated from fallback data due to pipeline error';
@@ -81,9 +102,7 @@ export async function GET(request: NextRequest) {
 
     // Default: Return mock data with hint
     console.log('[generate-task] No mode specified, using mock data');
-    const mockPath = path.join(process.cwd(), 'src/data/mock-task.json');
-    const mockData = await fs.readFile(mockPath, 'utf-8');
-    return NextResponse.json(JSON.parse(mockData));
+    return NextResponse.json(await loadMockTask());
     
   } catch (error) {
     console.error('[generate-task] Error:', error);
