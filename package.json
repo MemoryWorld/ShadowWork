@@ -20,7 +20,8 @@
     "@supabase/supabase-js": "2.45.4",
     "openai": "4.67.3",
     "axios": "1.7.7",
-    "canvas-confetti": "1.9.3"
+    "canvas-confetti": "1.9.3",
+    "apify-client": "2.9.3"
   },
   "devDependencies": {
     "@types/node": "20.17.6",
