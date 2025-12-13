@@ -57,6 +57,7 @@ export default function HomePage() {
           <nav className="flex items-center gap-6">
             <a href="#features" className="text-gray-600 hover:text-gray-900">Features</a>
             <a href="#how-it-works" className="text-gray-600 hover:text-gray-900">How It Works</a>
+            <a href="/generate" className="text-blue-600 hover:text-blue-800 font-medium">🔬 Generator</a>
             {user ? (
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 rounded-lg">
