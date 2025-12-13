@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { CodeEditor } from './CodeEditor';
+import { CountdownTimer } from './CountdownTimer';
+import { TerminalBootSequence } from './TerminalBootSequence';
+import { SuccessModal } from './SuccessModal';
 import { useWebContainer } from '@/hooks/useWebContainer';
 import { useRecorder } from '@/hooks/useRecorder';
 import type { Task } from '@/types';
@@ -14,7 +17,7 @@ import type { Task } from '@/types';
 
 interface ChallengeWorkspaceProps {
   task: Task;
-  onSubmit: (events: any[]) => void;
+  onSubmit: (events: any[], sessionTime: number) => void;
 }
 
 export function ChallengeWorkspace({ task, onSubmit }: ChallengeWorkspaceProps) {
@@ -22,6 +25,9 @@ export function ChallengeWorkspace({ task, onSubmit }: ChallengeWorkspaceProps) 
   const [fileContent, setFileContent] = useState<string>('');
   const [output, setOutput] = useState<string>('');
   const [isRunning, setIsRunning] = useState(false);
+  const [showBootSequence, setShowBootSequence] = useState(true);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [sessionStartTime, setSessionStartTime] = useState(Date.now());
 
   const { isReady, isBooting, bootError, loadTask, runCommand, writeFile, readFile } =
     useWebContainer();
@@ -121,10 +127,17 @@ export function ChallengeWorkspace({ task, onSubmit }: ChallengeWorkspaceProps) 
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const events = stopAndGetEvents();
-    console.log(`[Workspace] Submitting ${events.length} events`);
-    onSubmit(events);
+    const sessionTime = Math.floor((Date.now() - sessionStartTime) / 1000);
+    
+    console.log(`[Workspace] Submitting ${events.length} events, session time: ${sessionTime}s`);
+    
+    // Call onSubmit with session time
+    onSubmit(events, sessionTime);
+    
+    // Show success modal with confetti
+    setShowSuccessModal(true);
   };
 
   if (bootError) {
@@ -161,17 +174,30 @@ export function ChallengeWorkspace({ task, onSubmit }: ChallengeWorkspaceProps) 
           <div>
             <h1 className="text-2xl font-bold text-gray-900">{task.title}</h1>
             <p className="text-sm text-gray-500 mt-1">
-              {task.category} • Difficulty: {task.difficulty}/100 • {task.estimatedTime} min
+              {task.category} • Difficulty: {task.difficulty}/100
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
+            {/* Countdown Timer */}
+            <CountdownTimer 
+              initialMinutes={task.estimatedTime || 45}
+              onTimeout={() => console.log('[Timer] Time is up!')}
+            />
+            
+            {/* Enhanced Recording Indicator */}
             {isRecording && (
-              <div className="flex items-center gap-2 text-sm text-red-600">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-200 rounded-lg">
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
                 </span>
-                Recording ({getEventCount()} events)
+                <span className="text-sm font-medium text-green-700">
+                  REC {String(Math.floor((Date.now() - sessionStartTime) / 1000 / 60)).padStart(2, '0')}:
+                  {String(Math.floor((Date.now() - sessionStartTime) / 1000 % 60)).padStart(2, '0')}
+                </span>
+                <span className="text-xs text-green-600">
+                  ({getEventCount()} events)
+                </span>
               </div>
             )}
             <button
@@ -237,10 +263,34 @@ export function ChallengeWorkspace({ task, onSubmit }: ChallengeWorkspaceProps) 
 
         {/* Output Panel */}
         <div className="w-96 bg-gray-900 text-gray-200 flex flex-col">
-          <div className="bg-gray-800 px-4 py-2 text-sm font-semibold">Output</div>
-          <pre className="flex-1 overflow-auto p-4 text-xs font-mono">{output || 'No output yet.'}</pre>
+          <div className="bg-gray-800 px-4 py-2 text-sm font-semibold border-b border-gray-700">Terminal</div>
+          <div className="flex-1 overflow-auto p-4">
+            {showBootSequence && !output && (
+              <TerminalBootSequence 
+                onComplete={() => {
+                  setShowBootSequence(false);
+                  setSessionStartTime(Date.now());
+                }}
+              />
+            )}
+            {output && (
+              <pre className="text-xs font-mono text-gray-300">{output}</pre>
+            )}
+            {!output && !showBootSequence && (
+              <div className="text-xs text-gray-500">Ready. Awaiting commands...</div>
+            )}
+          </div>
         </div>
       </div>
+
+      {/* Success Modal with Confetti */}
+      <SuccessModal
+        isOpen={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        points={100}
+        totalPoints={100}
+        offerQualified={false}
+      />
     </div>
   );
 }

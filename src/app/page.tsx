@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { getMockUser, logout, type MockUser } from '@/lib/mockAuth';
 
 /**
  * Landing Page
@@ -13,17 +14,35 @@ import { useRouter } from 'next/navigation';
 export default function HomePage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [user, setUser] = useState<MockUser | null>(null);
+
+  // Check if user is logged in
+  useEffect(() => {
+    setUser(getMockUser());
+  }, []);
 
   const handleStartChallenge = () => {
+    // Check if user is logged in
+    if (!user) {
+      // Show friendly message and redirect to login
+      if (confirm('Please sign in to start a challenge. Sign in now?')) {
+        router.push('/login');
+      }
+      return;
+    }
+
     setIsLoading(true);
-    // For MVP: Skip auth and go directly to challenge with mock data
+    // Go to challenge with mock data
     router.push('/challenge?mock=true');
   };
 
-  const handleGitHubLogin = () => {
-    // TODO: Implement GitHub OAuth
-    // For now, redirect to challenge
-    window.location.href = '/api/auth/github';
+  const handleLogin = () => {
+    router.push('/login');
+  };
+
+  const handleLogout = () => {
+    logout();
+    setUser(null);
   };
 
   return (
@@ -38,12 +57,26 @@ export default function HomePage() {
           <nav className="flex items-center gap-6">
             <a href="#features" className="text-gray-600 hover:text-gray-900">Features</a>
             <a href="#how-it-works" className="text-gray-600 hover:text-gray-900">How It Works</a>
-            <button
-              onClick={handleGitHubLogin}
-              className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
-            >
-              Sign In
-            </button>
+            {user ? (
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 rounded-lg">
+                  <span className="text-sm font-medium text-blue-700">{user.email}</span>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
+                >
+                  Sign Out
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={handleLogin}
+                className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                Sign In
+              </button>
+            )}
           </nav>
         </div>
       </header>
@@ -87,7 +120,13 @@ export default function HomePage() {
           </div>
 
           <p className="text-sm text-gray-500 mt-6">
-            No installation required • Runs in your browser • Complete in 30-45 min
+            {user ? (
+              <span className="text-green-600 font-medium">
+                ✓ Signed in as {user.email} • Ready to start!
+              </span>
+            ) : (
+              <>No installation required • Runs in your browser • Complete in 30-45 min</>
+            )}
           </p>
         </div>
 
