@@ -10,6 +10,11 @@ CREATE TABLE IF NOT EXISTS submissions (
   difficulty INTEGER NOT NULL,
   category TEXT NOT NULL,
   tech_stack TEXT[] NOT NULL,
+  session_time INTEGER,
+  points_earned INTEGER,
+  speed_bonus INTEGER,
+  code_snapshot JSONB,
+  evaluation_json JSONB,
   completed_at TIMESTAMP WITH TIME ZONE NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -40,4 +45,3 @@ USING (auth.uid()::text = user_id);
 
 -- For MVP: If not using auth, you can disable RLS temporarily
 -- ALTER TABLE submissions DISABLE ROW LEVEL SECURITY;
-

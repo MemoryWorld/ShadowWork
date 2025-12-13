@@ -7,7 +7,7 @@ import { TerminalBootSequence } from './TerminalBootSequence';
 import { SuccessModal } from './SuccessModal';
 import { useWebContainer } from '@/hooks/useWebContainer';
 import { useRecorder } from '@/hooks/useRecorder';
-import type { Task } from '@/types';
+import type { CodeFileSnapshot, SubmissionResponsePayload, Task } from '@/types';
 
 /**
  * Challenge Workspace Component
@@ -17,7 +17,11 @@ import type { Task } from '@/types';
 
 interface ChallengeWorkspaceProps {
   task: Task;
-  onSubmit: (events: any[], sessionTime: number) => void;
+  onSubmit: (
+    events: any[],
+    codeSnapshot: CodeFileSnapshot[],
+    sessionTime: number
+  ) => Promise<SubmissionResponsePayload | null>;
 }
 
 export function ChallengeWorkspace({ task, onSubmit }: ChallengeWorkspaceProps) {
@@ -28,6 +32,8 @@ export function ChallengeWorkspace({ task, onSubmit }: ChallengeWorkspaceProps) 
   const [showBootSequence, setShowBootSequence] = useState(true);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [sessionStartTime, setSessionStartTime] = useState(Date.now());
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionResult, setSubmissionResult] = useState<SubmissionResponsePayload | null>(null);
 
   const { isReady, isBooting, bootError, loadTask, runCommand, writeFile, readFile } =
     useWebContainer();
@@ -127,17 +133,55 @@ export function ChallengeWorkspace({ task, onSubmit }: ChallengeWorkspaceProps) 
     }
   };
 
+  const captureCodeSnapshot = async (): Promise<CodeFileSnapshot[]> => {
+    const snapshots: CodeFileSnapshot[] = [];
+    const fileNames = Object.keys(task.files);
+
+    for (const filename of fileNames) {
+      try {
+        const content = await readFile(filename);
+        snapshots.push({ path: filename, content });
+      } catch (error) {
+        console.error(`[Workspace] Failed to read file ${filename}:`, error);
+      }
+    }
+
+    return snapshots;
+  };
+
   const handleSubmit = async () => {
-    const events = stopAndGetEvents();
-    const sessionTime = Math.floor((Date.now() - sessionStartTime) / 1000);
-    
-    console.log(`[Workspace] Submitting ${events.length} events, session time: ${sessionTime}s`);
-    
-    // Call onSubmit with session time
-    onSubmit(events, sessionTime);
-    
-    // Show success modal with confetti
-    setShowSuccessModal(true);
+    if (isSubmitting) {
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const events = stopAndGetEvents();
+      const sessionTime = Math.floor((Date.now() - sessionStartTime) / 1000);
+      const codeSnapshot = await captureCodeSnapshot();
+
+      console.log(
+        `[Workspace] Submitting ${events.length} events, ${codeSnapshot.length} files, session time: ${sessionTime}s`
+      );
+
+      const submission = await onSubmit(events, codeSnapshot, sessionTime);
+
+      if (submission) {
+        setSubmissionResult(submission);
+        // Show success modal with confetti
+        setShowSuccessModal(true);
+      } else {
+        setOutput('Submission failed. Please try again.');
+      }
+    } catch (error) {
+      console.error('[Workspace] Submission failed:', error);
+      setOutput(
+        `Submission Error: ${error instanceof Error ? error.message : 'Failed to submit challenge'}`
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (bootError) {
@@ -216,9 +260,10 @@ export function ChallengeWorkspace({ task, onSubmit }: ChallengeWorkspaceProps) 
             </button>
             <button
               onClick={handleSubmit}
-              className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
+              disabled={isSubmitting}
+              className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50"
             >
-              Submit
+              {isSubmitting ? 'Submitting...' : 'Submit'}
             </button>
           </div>
         </div>
@@ -287,9 +332,10 @@ export function ChallengeWorkspace({ task, onSubmit }: ChallengeWorkspaceProps) 
       <SuccessModal
         isOpen={showSuccessModal}
         onClose={() => setShowSuccessModal(false)}
-        points={100}
-        totalPoints={100}
-        offerQualified={false}
+        points={submissionResult?.points?.earned}
+        totalPoints={submissionResult?.points?.total}
+        offerQualified={submissionResult?.offerQualified}
+        evaluation={submissionResult?.evaluation ?? null}
       />
     </div>
   );
@@ -304,4 +350,3 @@ function getLanguageFromFilename(filename: string): string {
   if (filename.endsWith('.md')) return 'markdown';
   return 'plaintext';
 }
-
