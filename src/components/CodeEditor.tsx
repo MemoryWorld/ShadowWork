@@ -14,6 +14,7 @@ interface CodeEditorProps {
   onChange: (value: string) => void;
   language?: string;
   readOnly?: boolean;
+  theme?: 'dark' | 'light';
 }
 
 export function CodeEditor({
@@ -21,6 +22,7 @@ export function CodeEditor({
   onChange,
   language = 'javascript',
   readOnly = false,
+  theme = 'dark',
 }: CodeEditorProps) {
   const [mounted, setMounted] = useState(false);
 
@@ -30,7 +32,11 @@ export function CodeEditor({
 
   if (!mounted) {
     return (
-      <div className="w-full h-full flex items-center justify-center bg-gray-900 text-gray-400">
+      <div
+        className={`w-full h-full flex items-center justify-center ${
+          theme === 'dark' ? 'bg-gray-900 text-gray-400' : 'bg-white text-gray-500'
+        }`}
+      >
         Loading editor...
       </div>
     );
@@ -43,7 +49,7 @@ export function CodeEditor({
       language={language}
       value={value}
       onChange={(value) => onChange(value || '')}
-      theme="vs-dark"
+      theme={theme === 'light' ? 'light' : 'vs-dark'}
       options={{
         readOnly,
         minimap: { enabled: false },
@@ -58,4 +64,3 @@ export function CodeEditor({
     />
   );
 }
-
