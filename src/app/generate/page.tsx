@@ -44,6 +44,11 @@ export default function GeneratePage() {
   const [statusStep, setStatusStep] = useState<'idle' | 'fetching' | 'analyzing' | 'finalizing'>('idle');
   const [fallbackUsed, setFallbackUsed] = useState(false);
   const [lastRepo, setLastRepo] = useState('');
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Load resume profile once on mount
   useEffect(() => {
@@ -89,6 +94,8 @@ export default function GeneratePage() {
     new Set([...(resumeProfile.recommendedRepos || []), ...((githubProfile?.suggestedRepos as string[]) || [])])
   );
   const quickRepos = Array.from(new Set([...personalizedRepos, ...popularRepos]));
+  const showResumeBanner = mounted && (resumeProfile.techStack.length > 0 || resumeProfile.recommendedRepos.length > 0);
+  const showRecommended = mounted && personalizedRepos.length > 0;
 
   const fallbackTask = {
     _warning: 'AI generation failed. Showing a curated sample challenge so you can continue the demo.',
@@ -229,7 +236,7 @@ export default function GeneratePage() {
           )}
 
           {/* Resume insights banner */}
-          {(resumeProfile.techStack.length > 0 || resumeProfile.recommendedRepos.length > 0) && (
+          {showResumeBanner && (
             <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-900">
               <div className="flex flex-wrap gap-2 mb-2">
                 <span className="px-2 py-1 rounded bg-blue-100 text-blue-700 text-xs font-semibold">Using resume insights</span>
@@ -266,7 +273,7 @@ export default function GeneratePage() {
             </div>
           )}
 
-          {personalizedRepos.length > 0 && (
+          {showRecommended && (
             <div className="mt-4 p-4 border border-gray-200 rounded-lg bg-gray-50">
               <p className="text-sm font-semibold text-gray-800 mb-2">Recommended for you</p>
               <div className="flex flex-wrap gap-2">
