@@ -71,7 +71,6 @@ export default function HomePage() {
             <span className="text-xl font-bold text-gray-900">ShadowWork</span>
           </div>
           <nav className="flex items-center gap-6">
-            <Link href="/learn-more" className="text-gray-600 hover:text-gray-900">Learn More</Link>
             {/* Enterprise-only: Generator */}
             {isEnterprise && (
               <a href="/generate" className="text-blue-600 hover:text-blue-800 font-medium">🔬 Generator</a>
@@ -188,10 +187,17 @@ export default function HomePage() {
             </button>
 
             <Link
-              href="/learn-more"
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                if (typeof window !== 'undefined') {
+                  localStorage.setItem('shadowwork_role', 'enterprise');
+                }
+                router.push('/login');
+              }}
               className="px-8 py-4 bg-white border-2 border-gray-200 text-gray-700 rounded-lg text-lg font-semibold hover:border-gray-300 hover:shadow-lg transition-all inline-block text-center"
             >
-              Learn More
+              Enterprise Portal
             </Link>
           </motion.div>
 
