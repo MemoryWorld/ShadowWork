@@ -9,8 +9,13 @@ const evaluatorSpec = fs.existsSync(evaluatorSpecPath)
   : '';
 
 const openai = process.env.OPENAI_API_KEY
-  ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  ? new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+      baseURL: process.env.OPENAI_BASE_URL,
+    })
   : null;
+
+const model = process.env.OPENAI_MODEL || 'gpt-4o';
 
 export interface EvaluationInput {
   taskContext?: {
@@ -61,7 +66,7 @@ export async function evaluateSubmission(
 
   try {
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o',
+      model,
       temperature: 0.2,
       response_format: { type: 'json_object' },
       messages: [
@@ -96,4 +101,3 @@ export async function evaluateSubmission(
     };
   }
 }
-

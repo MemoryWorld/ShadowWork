@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { CodeEditor } from './CodeEditor';
 import { CountdownTimer } from './CountdownTimer';
 import { TerminalBootSequence } from './TerminalBootSequence';
@@ -34,6 +35,8 @@ export function ChallengeWorkspace({ task, onSubmit }: ChallengeWorkspaceProps) 
   const [sessionStartTime, setSessionStartTime] = useState(Date.now());
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionResult, setSubmissionResult] = useState<SubmissionResponsePayload | null>(null);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const router = useRouter();
 
   const { isReady, isBooting, bootError, loadTask, runCommand, writeFile, readFile } =
     useWebContainer();
@@ -169,8 +172,20 @@ export function ChallengeWorkspace({ task, onSubmit }: ChallengeWorkspaceProps) 
 
       if (submission) {
         setSubmissionResult(submission);
-        // Show success modal with confetti
-        setShowSuccessModal(true);
+        // persist for success page
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(
+            'shadowwork_last_submission',
+            JSON.stringify({
+              title: task.title,
+              points: submission.points,
+              offerQualified: submission.offerQualified,
+              evaluation: submission.evaluation,
+              recordingUrl: submission.recordingUrl,
+            })
+          );
+        }
+        router.push('/success');
       } else {
         setOutput('Submission failed. Please try again.');
       }
@@ -211,132 +226,214 @@ export function ChallengeWorkspace({ task, onSubmit }: ChallengeWorkspaceProps) 
   }
 
   return (
-    <div className="w-full h-screen flex flex-col bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">{task.title}</h1>
-            <p className="text-sm text-gray-500 mt-1">
-              {task.category} • Difficulty: {task.difficulty}/100
-            </p>
-          </div>
+    <div className={`min-h-screen ${isDarkMode ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'}`}>
+      <div className="max-w-7xl mx-auto h-screen flex flex-col gap-4 px-6 py-6">
+        {/* Header */}
+        <div
+          className={`flex items-center justify-between rounded-2xl px-6 py-4 backdrop-blur shadow-xl ${
+            isDarkMode ? 'border border-slate-800 bg-slate-900/70' : 'border border-slate-200 bg-white/80'
+          }`}
+        >
           <div className="flex items-center gap-4">
-            {/* Countdown Timer */}
+            <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-blue-500 to-purple-500 shadow-lg" />
+            <div>
+              <p className={`text-xs uppercase tracking-[0.2em] ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                Live challenge
+              </p>
+              <h1 className={`text-2xl font-semibold ${isDarkMode ? 'text-slate-50' : 'text-slate-900'}`}>{task.title}</h1>
+              <div className={`mt-1 flex items-center gap-2 text-sm ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                <span className={`rounded-full px-2 py-1 text-[11px] ${isDarkMode ? 'border border-slate-800/80' : 'border border-slate-200'}`}>
+                  {task.category}
+                </span>
+                <span className={`rounded-full px-2 py-1 text-[11px] ${isDarkMode ? 'border border-slate-800/80' : 'border border-slate-200'}`}>
+                  Difficulty {task.difficulty}/100
+                </span>
+                <span className={`rounded-full px-2 py-1 text-[11px] ${isDarkMode ? 'border border-slate-800/80' : 'border border-slate-200'}`}>
+                  ~{task.estimatedTime || 45} mins
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
             <CountdownTimer 
               initialMinutes={task.estimatedTime || 45}
               onTimeout={() => console.log('[Timer] Time is up!')}
             />
-            
-            {/* Enhanced Recording Indicator */}
+
             {isRecording && (
-              <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-200 rounded-lg">
+              <div className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-emerald-200">
                 <span className="relative flex h-2.5 w-2.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400"></span>
                 </span>
-                <span className="text-sm font-medium text-green-700">
+                <span className="text-sm font-semibold">
                   REC {String(Math.floor((Date.now() - sessionStartTime) / 1000 / 60)).padStart(2, '0')}:
                   {String(Math.floor((Date.now() - sessionStartTime) / 1000 % 60)).padStart(2, '0')}
                 </span>
-                <span className="text-xs text-green-600">
-                  ({getEventCount()} events)
+                <span className="text-xs text-emerald-100/80">
+                  {getEventCount()} events
                 </span>
               </div>
             )}
+
             <button
               onClick={handleRun}
               disabled={isRunning}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+              className={`rounded-lg px-4 py-2 text-sm font-semibold transition hover:-translate-y-px disabled:opacity-60 ${
+                isDarkMode
+                  ? 'border border-slate-800 bg-slate-800/80 text-slate-100 hover:border-slate-700 hover:bg-slate-700/80'
+                  : 'border border-slate-200 bg-slate-100 text-slate-900 hover:border-slate-300 hover:bg-white'
+              }`}
             >
               {isRunning ? 'Running...' : 'Run'}
             </button>
             <button
               onClick={handleTest}
               disabled={isRunning}
-              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+              className={`rounded-lg px-4 py-2 text-sm font-semibold transition hover:-translate-y-px disabled:opacity-60 ${
+                isDarkMode
+                  ? 'border border-emerald-500/30 bg-emerald-500/15 text-emerald-50 hover:border-emerald-400 hover:bg-emerald-500/20'
+                  : 'border border-emerald-200 bg-emerald-50 text-emerald-700 hover:border-emerald-300 hover:bg-emerald-100'
+              }`}
             >
               Test
             </button>
             <button
               onClick={handleSubmit}
               disabled={isSubmitting}
-              className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50"
+              className={`rounded-lg px-4 py-2 text-sm font-semibold transition hover:-translate-y-px disabled:opacity-60 ${
+                isDarkMode
+                  ? 'border border-indigo-500/30 bg-indigo-500/15 text-indigo-50 hover:border-indigo-400 hover:bg-indigo-500/25'
+                  : 'border border-indigo-200 bg-indigo-50 text-indigo-700 hover:border-indigo-300 hover:bg-indigo-100'
+              }`}
             >
               {isSubmitting ? 'Submitting...' : 'Submit'}
             </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Sidebar - File List */}
-        <div className="w-48 bg-gray-900 text-gray-200 overflow-y-auto">
-          <div className="p-3 border-b border-gray-700">
-            <h3 className="text-xs font-semibold uppercase">Files</h3>
-          </div>
-          {Object.keys(task.files).map((filename) => (
             <button
-              key={filename}
-              onClick={() => {
-                setCurrentFile(filename);
-                readFile(filename).then(setFileContent);
-              }}
-              className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-800 ${
-                currentFile === filename ? 'bg-gray-800 text-white' : ''
+              onClick={() => setIsDarkMode((prev) => !prev)}
+              className={`rounded-lg px-3 py-2 text-sm font-semibold transition hover:-translate-y-px ${
+                isDarkMode
+                  ? 'border border-slate-800 bg-slate-800/70 text-slate-100 hover:border-slate-700 hover:bg-slate-700/80'
+                  : 'border border-slate-200 bg-white text-slate-900 hover:border-slate-300 hover:bg-slate-50'
               }`}
             >
-              {filename}
+              {isDarkMode ? 'Light' : 'Dark'}
             </button>
-          ))}
-        </div>
-
-        {/* Editor */}
-        <div className="flex-1 flex flex-col">
-          <div className="bg-gray-800 text-white px-4 py-2 text-sm">
-            {currentFile || 'No file selected'}
-          </div>
-          <div className="flex-1">
-            <CodeEditor
-              value={fileContent}
-              onChange={handleFileChange}
-              language={getLanguageFromFilename(currentFile)}
-            />
           </div>
         </div>
 
-        {/* Output Panel */}
-        <div className="w-96 bg-gray-900 text-gray-200 flex flex-col">
-          <div className="bg-gray-800 px-4 py-2 text-sm font-semibold border-b border-gray-700">Terminal</div>
-          <div className="flex-1 overflow-auto p-4">
-            {showBootSequence && !output && (
-              <TerminalBootSequence 
-                onComplete={() => {
-                  setShowBootSequence(false);
-                  setSessionStartTime(Date.now());
-                }}
-              />
-            )}
-            {output && (
-              <pre className="text-xs font-mono text-gray-300">{output}</pre>
-            )}
-            {!output && !showBootSequence && (
-              <div className="text-xs text-gray-500">Ready. Awaiting commands...</div>
-            )}
+        {/* Main Content */}
+        <div
+          className={`flex-1 overflow-hidden rounded-2xl backdrop-blur shadow-2xl ${
+            isDarkMode ? 'border border-slate-800 bg-slate-900/60' : 'border border-slate-200 bg-white'
+          }`}
+        >
+          <div className="flex h-full">
+            {/* Sidebar - File List */}
+            <div
+              className={`w-56 ${
+                isDarkMode
+                  ? 'border-r border-slate-800 bg-slate-900/80 text-slate-200'
+                  : 'border-r border-slate-200 bg-slate-100 text-slate-800'
+              }`}
+            >
+              <div className={`px-4 py-3 ${isDarkMode ? 'border-b border-slate-800/80' : 'border-b border-slate-200'}`}>
+                <h3 className={`text-xs font-semibold uppercase tracking-wide ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                  Files
+                </h3>
+              </div>
+              {Object.keys(task.files).map((filename) => (
+                <button
+                  key={filename}
+                  onClick={() => {
+                    setCurrentFile(filename);
+                    readFile(filename).then(setFileContent);
+                  }}
+                  className={`w-full text-left px-4 py-2.5 text-sm transition ${
+                    currentFile === filename
+                      ? isDarkMode
+                        ? 'bg-slate-800 text-slate-50 border-l-2 border-indigo-400'
+                        : 'bg-white text-indigo-700 border-l-2 border-indigo-400'
+                      : isDarkMode
+                        ? 'text-slate-300 hover:bg-slate-800/80'
+                        : 'text-slate-700 hover:bg-white'
+                  }`}
+                >
+                  {filename}
+                </button>
+              ))}
+            </div>
+
+            {/* Editor */}
+            <div className="flex-1 flex flex-col">
+              <div
+                className={`flex items-center justify-between border-b px-4 py-3 text-sm ${
+                  isDarkMode ? 'border-slate-800 bg-slate-900/80' : 'border-slate-200 bg-white/90'
+                }`}
+              >
+                <span className={`font-medium ${isDarkMode ? 'text-slate-100' : 'text-slate-900'}`}>
+                  {currentFile || 'No file selected'}
+                </span>
+                <span className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>Autosaves to sandbox</span>
+              </div>
+              <div className="flex-1">
+                <CodeEditor
+                  value={fileContent}
+                  onChange={handleFileChange}
+                  language={getLanguageFromFilename(currentFile)}
+                  theme={isDarkMode ? 'dark' : 'light'}
+                />
+              </div>
+            </div>
+
+            {/* Output Panel */}
+            <div
+              className={`w-96 flex flex-col ${
+                isDarkMode
+                  ? 'border-l border-slate-800 bg-slate-900/80 text-slate-200'
+                  : 'border-l border-slate-200 bg-white text-slate-800'
+              }`}
+            >
+              <div
+                className={`px-4 py-3 text-sm font-semibold ${
+                  isDarkMode ? 'border-b border-slate-800 bg-slate-900' : 'border-b border-slate-200 bg-white'
+                }`}
+              >
+                Terminal
+              </div>
+              <div className="flex-1 overflow-auto p-4">
+                {showBootSequence && !output && (
+                  <TerminalBootSequence 
+                    onComplete={() => {
+                      setShowBootSequence(false);
+                      setSessionStartTime(Date.now());
+                    }}
+                  />
+                )}
+                {output && (
+                  <pre className={`text-xs font-mono ${isDarkMode ? 'text-slate-200' : 'text-slate-800'}`}>{output}</pre>
+                )}
+                {!output && !showBootSequence && (
+                  <div className={`text-xs ${isDarkMode ? 'text-slate-500' : 'text-slate-500'}`}>
+                    Ready. Awaiting commands...
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
+
+        {/* Success Modal with Confetti */}
+        <SuccessModal
+          isOpen={showSuccessModal}
+          onClose={() => setShowSuccessModal(false)}
+          points={submissionResult?.points?.earned}
+          totalPoints={submissionResult?.points?.total}
+          offerQualified={submissionResult?.offerQualified}
+          evaluation={submissionResult?.evaluation ?? null}
+        />
       </div>
-
-      {/* Success Modal with Confetti */}
-      <SuccessModal
-        isOpen={showSuccessModal}
-        onClose={() => setShowSuccessModal(false)}
-        points={submissionResult?.points?.earned}
-        totalPoints={submissionResult?.points?.total}
-        offerQualified={submissionResult?.offerQualified}
-        evaluation={submissionResult?.evaluation ?? null}
-      />
     </div>
   );
 }
