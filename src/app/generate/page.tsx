@@ -97,6 +97,14 @@ export default function GeneratePage() {
   const showResumeBanner = mounted && (resumeProfile.techStack.length > 0 || resumeProfile.recommendedRepos.length > 0);
   const showRecommended = mounted && personalizedRepos.length > 0;
 
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-8">
+        <div className="max-w-4xl mx-auto text-sm text-gray-600">Loading generator...</div>
+      </div>
+    );
+  }
+
   const fallbackTask = {
     _warning: 'AI generation failed. Showing a curated sample challenge so you can continue the demo.',
     title: 'API contract drift: missing validation on user profile update',
