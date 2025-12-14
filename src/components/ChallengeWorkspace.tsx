@@ -174,11 +174,11 @@ export function ChallengeWorkspace({ task, onSubmit, demoMode = false }: Challen
   };
 
   const handleTest = async () => {
-    if (demoMode || !hasTestScript) {
-      setIsRunning(true);
-      const logs = [
-        'Running evaluation script: test-suite.js...',
-        '✔ Test Case 1: Handles empty input... Passed',
+      if (demoMode || !hasTestScript) {
+        setIsRunning(true);
+        const logs = [
+          'Running evaluation script: test-suite.js...',
+          '✔ Test Case 1: Handles empty input... Passed',
         '✔ Test Case 2: Handles valid input... Passed',
         '✔ Test Case 3: Handles edge cases... Passed',
         'All tests passed. Congratulations!',
