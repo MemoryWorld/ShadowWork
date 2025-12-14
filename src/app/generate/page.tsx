@@ -41,7 +41,11 @@ export default function GeneratePage() {
     }
   });
   const [repoPrefilled, setRepoPrefilled] = useState(false);
+  const [statusStep, setStatusStep] = useState<'idle' | 'fetching' | 'analyzing' | 'finalizing'>('idle');
+  const [fallbackUsed, setFallbackUsed] = useState(false);
+  const [lastRepo, setLastRepo] = useState('');
 
+  // Load resume profile once on mount
   useEffect(() => {
     if (typeof window === 'undefined') return;
     try {
@@ -55,21 +59,22 @@ export default function GeneratePage() {
           roles: parsed.roles || [],
           taskHints: parsed.taskHints || [],
         });
-        // merge tech stack
         if (parsed.techStack?.length) {
           setTechStack((prev) => Array.from(new Set([...(prev || []), ...parsed.techStack])));
         }
       }
     } catch {}
-    // Autofill repo from stored profile if available
-    if (!repoPrefilled) {
-      if (githubProfile?.suggestedRepos?.length) {
-        setRepoUrl(githubProfile.suggestedRepos[0]);
-        setRepoPrefilled(true);
-      } else if (resumeProfile.recommendedRepos?.length) {
-        setRepoUrl(resumeProfile.recommendedRepos[0]);
-        setRepoPrefilled(true);
-      }
+  }, []);
+
+  // Prefill repo once when data is available
+  useEffect(() => {
+    if (repoPrefilled) return;
+    const ghRepo = githubProfile?.suggestedRepos?.[0];
+    const resumeRepo = resumeProfile.recommendedRepos?.[0];
+    const candidate = ghRepo || resumeRepo;
+    if (candidate) {
+      setRepoUrl(candidate);
+      setRepoPrefilled(true);
     }
   }, [githubProfile, repoPrefilled, resumeProfile.recommendedRepos]);
 
@@ -80,38 +85,81 @@ export default function GeneratePage() {
     'shadcn-ui/ui',
     'tailwindlabs/tailwindcss',
   ];
+  const personalizedRepos = Array.from(
+    new Set([...(resumeProfile.recommendedRepos || []), ...((githubProfile?.suggestedRepos as string[]) || [])])
+  );
+  const quickRepos = Array.from(new Set([...personalizedRepos, ...popularRepos]));
+
+  const fallbackTask = {
+    _warning: 'AI generation failed. Showing a curated sample challenge so you can continue the demo.',
+    title: 'API contract drift: missing validation on user profile update',
+    difficulty: 38,
+    category: 'Backend',
+    estimatedTime: 25,
+    description:
+      'A recent PR introduced partial validation in the user profile update endpoint. Emails and countries are validated, but displayName is now allowed to exceed the expected length, causing downstream notifications to truncate incorrectly. Add a test that reproduces the regression, then implement the fix in the controller or validator while keeping API responses stable.',
+    techStack: ['Node.js', 'TypeScript', 'Jest', 'REST'],
+    files: {
+      'src/controllers/profile.ts': {
+        content: '// TODO: add length validation for displayName and return 400 on violation\n',
+      },
+      'tests/profile.test.ts': {
+        content: '// TODO: add regression test for displayName length > 80 chars\n',
+      },
+    },
+  };
+
+  const normalizeRepo = (value: string): string | null => {
+    const raw = value.trim();
+    if (!raw) return null;
+    let cleaned = raw
+      .replace(/^https?:\/\/github.com\//i, '')
+      .replace(/^git@github.com:/i, '')
+      .replace(/\.git$/i, '')
+      .replace(/\/+$/, '');
+    if (cleaned.split('/').length === 2) return cleaned;
+    return null;
+  };
 
   const handleGenerate = async () => {
-    if (!repoUrl.trim()) {
-      setError('Please enter a repository URL');
+    const normalized = normalizeRepo(repoUrl);
+    if (!normalized) {
+      setError('Please enter a valid GitHub repo (owner/name or full URL)');
       return;
     }
 
+      setStatusStep('fetching');
       setIsLoading(true);
       setError(null);
       setResult(null);
+      setFallbackUsed(false);
+      setLastRepo(normalized);
 
       try {
-        console.log('[Generate] Requesting task from:', repoUrl);
+        console.log('[Generate] Requesting task from:', normalized);
 
         const response = await fetch(
-        `/api/generate-task?source=github&repo=${encodeURIComponent(repoUrl)}&techStack=${encodeURIComponent(techStack.join(','))}`
+        `/api/generate-task?source=github&repo=${encodeURIComponent(normalized)}&techStack=${encodeURIComponent(techStack.join(','))}`
         );
 
       if (!response.ok) {
         throw new Error(`API error: ${response.statusText}`);
       }
 
+      setStatusStep('analyzing');
       const data = await response.json();
+      setStatusStep('finalizing');
       setResult(data);
-
       console.log('[Generate] Task received:', data);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to generate task';
       setError(message);
+      setResult({ ...fallbackTask, sourceRepo: repoUrl });
+      setFallbackUsed(true);
       console.error('[Generate] Error:', err);
     } finally {
       setIsLoading(false);
+      setStatusStep('idle');
     }
   };
 
@@ -124,10 +172,10 @@ export default function GeneratePage() {
               <h1 className="text-4xl font-bold text-gray-900 mb-2">
                 🔬 Task Generator
               </h1>
-              <p className="text-gray-600">
-                Prefill with your profile (GitHub / resume / LinkedIn) to auto-suggest repo and tech stack
-              </p>
-            </div>
+            <p className="text-gray-600">
+              Prefill with your profile (GitHub / resume / LinkedIn) to auto-suggest repo and tech stack, then generate a realistic debugging challenge.
+            </p>
+          </div>
             <button
               onClick={() => window.location.href = '/'}
               className="px-4 py-2 text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg hover:bg-white"
@@ -159,13 +207,26 @@ export default function GeneratePage() {
               {isLoading ? (
                 <span className="flex items-center gap-2">
                   <span className="animate-spin">⚪</span>
-                  Generating...
+                  {statusStep === 'fetching' && 'Fetching PRs...'}
+                  {statusStep === 'analyzing' && 'Analyzing diffs...'}
+                  {statusStep === 'finalizing' && 'Wrapping up...'}
                 </span>
               ) : (
                 '🚀 Generate'
               )}
             </button>
           </div>
+
+          {isLoading && (
+            <div className="mb-3 text-xs text-blue-700 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 flex items-center gap-2">
+              <span className="animate-spin text-blue-500">⚪</span>
+              <span>
+                {statusStep === 'fetching' && 'Fetching recent PRs and diffs...'}
+                {statusStep === 'analyzing' && 'Summarizing diffs into a runnable challenge...'}
+                {statusStep === 'finalizing' && 'Formatting files and tests...'}
+              </span>
+            </div>
+          )}
 
           {/* Resume insights banner */}
           {(resumeProfile.techStack.length > 0 || resumeProfile.recommendedRepos.length > 0) && (
@@ -198,10 +259,36 @@ export default function GeneratePage() {
                 </p>
               )}
               {resumeProfile.taskHints && resumeProfile.taskHints.length > 0 && (
-                <p className="text-xs text-blue-800">
+                <div className="text-xs text-blue-800">
                   Task hints: {resumeProfile.taskHints.join('; ')}
-                </p>
+                </div>
               )}
+            </div>
+          )}
+
+          {personalizedRepos.length > 0 && (
+            <div className="mt-4 p-4 border border-gray-200 rounded-lg bg-gray-50">
+              <p className="text-sm font-semibold text-gray-800 mb-2">Recommended for you</p>
+              <div className="flex flex-wrap gap-2">
+                {personalizedRepos.map((repo) => (
+                  <button
+                    key={repo}
+                    onClick={() => setRepoUrl(repo)}
+                    className="px-3 py-2 bg-white text-gray-800 rounded-lg text-xs border border-gray-200 hover:border-blue-300 hover:bg-blue-50 shadow-sm"
+                    disabled={isLoading}
+                    title={
+                      resumeProfile.recommendedRepos.includes(repo)
+                        ? 'Matches your resume tech stack'
+                        : 'From your GitHub handle'
+                    }
+                  >
+                    <div className="font-semibold">{repo}</div>
+                    <div className="text-[11px] text-gray-500">
+                      {resumeProfile.recommendedRepos.includes(repo) ? 'Resume match' : 'GitHub activity'}
+                    </div>
+                  </button>
+                ))}
+              </div>
             </div>
           )}
 
@@ -209,17 +296,7 @@ export default function GeneratePage() {
           <div>
             <p className="text-xs text-gray-500 mb-2">Quick select popular repos{githubProfile ? ' or from your GitHub handle' : ''}:</p>
             <div className="flex flex-wrap gap-2">
-              {(githubProfile?.suggestedRepos || []).map((repo) => (
-                <button
-                  key={repo}
-                  onClick={() => setRepoUrl(repo)}
-                  className="px-3 py-1 text-xs bg-indigo-100 text-indigo-700 hover:bg-indigo-200 rounded-lg transition-colors"
-                  disabled={isLoading}
-                >
-                  {repo}
-                </button>
-              ))}
-              {popularRepos.map((repo) => (
+              {quickRepos.map((repo) => (
                 <button
                   key={repo}
                   onClick={() => setRepoUrl(repo)}
@@ -338,7 +415,13 @@ export default function GeneratePage() {
                     <span>📊 Difficulty: {result.difficulty}/100</span>
                     <span>🏷️ {result.category}</span>
                     <span>⏱️ ~{result.estimatedTime} min</span>
+                    {lastRepo && <span>🔗 Source: {lastRepo}</span>}
                   </div>
+                  {fallbackUsed && (
+                    <p className="text-xs text-amber-700 mt-1">
+                      Using a curated fallback sample so the demo keeps running.
+                    </p>
+                  )}
                 </div>
 
                 {/* Description */}
@@ -403,6 +486,13 @@ export default function GeneratePage() {
                     className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200"
                   >
                     📋 Copy JSON
+                  </button>
+                  <button
+                    onClick={handleGenerate}
+                    disabled={isLoading}
+                    className="px-6 py-3 bg-white text-gray-800 rounded-lg font-semibold border border-gray-200 hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    🔄 Regenerate
                   </button>
                 </div>
               </div>
