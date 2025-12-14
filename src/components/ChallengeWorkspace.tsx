@@ -19,7 +19,7 @@ import { getMockUser } from '@/lib/mockAuth';
 
 interface ChallengeWorkspaceProps {
   task: Task;
-  demoMode?: boolean;
+  stubCommands?: boolean;
   onSubmit: (
     events: any[],
     codeSnapshot: CodeFileSnapshot[],
@@ -27,7 +27,7 @@ interface ChallengeWorkspaceProps {
   ) => Promise<SubmissionResponsePayload | null>;
 }
 
-export function ChallengeWorkspace({ task, onSubmit, demoMode = false }: ChallengeWorkspaceProps) {
+export function ChallengeWorkspace({ task, onSubmit, stubCommands = false }: ChallengeWorkspaceProps) {
   const [currentFile, setCurrentFile] = useState<string>('');
   const [fileContent, setFileContent] = useState<string>('');
   const [output, setOutput] = useState<string>('');
@@ -57,7 +57,7 @@ export function ChallengeWorkspace({ task, onSubmit, demoMode = false }: Challen
   };
 
   const { isReady, isBooting, bootError, loadTask, runCommand, writeFile, readFile } =
-    useWebContainer(demoMode);
+    useWebContainer(false);
 
   const {
     isRecording,
@@ -75,25 +75,6 @@ export function ChallengeWorkspace({ task, onSubmit, demoMode = false }: Challen
 
   const initializeWorkspace = async () => {
     try {
-      if (demoMode) {
-        const editableFiles = Object.keys(task.files).filter(
-          (name) => !name.includes('package.json') && !name.includes('README')
-        );
-        if (editableFiles.length > 0) {
-          const firstFile = editableFiles[0];
-          setCurrentFile(firstFile);
-          const fileData = task.files[firstFile] as any;
-          const content =
-            typeof fileData === 'object' && 'content' in fileData ? fileData.content : JSON.stringify(fileData, null, 2);
-          setFileContent(content || '');
-        }
-        // detect test script
-        const pkg = task.files['package.json'] as any;
-        if (pkg) detectTestScript(pkg);
-        setShowBootSequence(false);
-        return;
-      }
-
       await loadTask(task);
 
       // Find first editable file (not package.json or README)
@@ -129,7 +110,7 @@ export function ChallengeWorkspace({ task, onSubmit, demoMode = false }: Challen
   };
 
   const handleRun = async () => {
-    if (demoMode) {
+    if (stubCommands) {
       setIsRunning(true);
       const logs = [
         '[demo] Booting sandboxed environment... Done (0.5s)\n',
@@ -174,7 +155,7 @@ export function ChallengeWorkspace({ task, onSubmit, demoMode = false }: Challen
   };
 
   const handleTest = async () => {
-      if (demoMode || !hasTestScript) {
+    if (stubCommands || !hasTestScript) {
         setIsRunning(true);
         const logs = [
           'Running evaluation script: test-suite.js...',
