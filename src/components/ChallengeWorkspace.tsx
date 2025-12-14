@@ -9,6 +9,7 @@ import { SuccessModal } from './SuccessModal';
 import { useWebContainer } from '@/hooks/useWebContainer';
 import { useRecorder } from '@/hooks/useRecorder';
 import type { CodeFileSnapshot, SubmissionResponsePayload, Task } from '@/types';
+import { getMockUser } from '@/lib/mockAuth';
 
 /**
  * Challenge Workspace Component
@@ -174,6 +175,7 @@ export function ChallengeWorkspace({ task, onSubmit }: ChallengeWorkspaceProps) 
         setSubmissionResult(submission);
         // persist for success page
         if (typeof window !== 'undefined') {
+          const user = getMockUser();
           localStorage.setItem(
             'shadowwork_last_submission',
             JSON.stringify({
@@ -182,8 +184,26 @@ export function ChallengeWorkspace({ task, onSubmit }: ChallengeWorkspaceProps) 
               offerQualified: submission.offerQualified,
               evaluation: submission.evaluation,
               recordingUrl: submission.recordingUrl,
+              reviewSummary: (submission as any).reviewSummary,
             })
           );
+
+          // append to submissions list for local demo/review
+          try {
+            const existing = localStorage.getItem('shadowwork_submissions');
+            const list = existing ? JSON.parse(existing) : [];
+            list.unshift({
+              id: `local-${Date.now()}`,
+              task_title: task.title,
+              points_earned: submission.points?.earned,
+              review_summary: (submission as any).reviewSummary,
+              evaluation_json: submission.evaluation,
+              recording_url: submission.recordingUrl,
+              user_email: user?.email,
+              created_at: new Date().toISOString(),
+            });
+            localStorage.setItem('shadowwork_submissions', JSON.stringify(list.slice(0, 50)));
+          } catch {}
         }
         router.push('/success');
       } else {

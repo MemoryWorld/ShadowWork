@@ -27,7 +27,9 @@ CREATE INDEX IF NOT EXISTS idx_profiles_points ON profiles(total_points DESC);
 ALTER TABLE IF EXISTS submissions
 ADD COLUMN IF NOT EXISTS points_earned INTEGER DEFAULT 100,
 ADD COLUMN IF NOT EXISTS speed_bonus INTEGER DEFAULT 0,
-ADD COLUMN IF NOT EXISTS session_time INTEGER; -- in seconds
+ADD COLUMN IF NOT EXISTS session_time INTEGER, -- in seconds
+ADD COLUMN IF NOT EXISTS review_summary TEXT,
+ADD COLUMN IF NOT EXISTS task_title TEXT;
 
 -- ============================================
 -- 3. Create offers table (for tracking)

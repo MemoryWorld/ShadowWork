@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { sendSlackNotification } from '@/lib/slack';
 import { evaluateSubmission } from '@/lib/evaluator';
-import type { CodeFileSnapshot, EvaluationResult } from '@/types';
+import type { CodeFileSnapshot, EvaluationResult, SubmissionResponsePayload } from '@/types';
+import OpenAI from 'openai';
 
 /**
  * API Route: /api/submit
@@ -19,6 +20,48 @@ const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
     )
   : null;
+const openai = process.env.OPENAI_API_KEY
+  ? new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+      baseURL: process.env.OPENAI_BASE_URL,
+    })
+  : null;
+const model = process.env.OPENAI_MODEL || 'gpt-4o';
+
+async function generateReviewSummary(payload: {
+  taskTitle?: string;
+  points?: SubmissionResponsePayload['points'];
+  offerQualified?: boolean;
+  evaluation?: EvaluationResult | null;
+}) {
+  if (!openai) return null;
+  const { taskTitle, points, offerQualified, evaluation } = payload;
+  const prompt = [
+    'You are an interview bar-raiser. Write an English review summary (180-220 words) for a coding challenge submission.',
+    'Tone: concise, evidence-based, balanced (strengths, risks), suggest next steps.',
+    'Use only the provided data; do not invent details.',
+    `Task: ${taskTitle || 'Unknown task'}`,
+    `Points: ${points ? `${points.earned} earned, total ${points.total}` : 'N/A'}`,
+    `Offer qualified: ${offerQualified ? 'yes' : 'no'}`,
+    evaluation
+      ? `Scores: understanding ${evaluation.scores?.understanding}, implementation ${evaluation.scores?.implementation}, validation ${evaluation.scores?.validation}, communication ${evaluation.scores?.communication}, total ${evaluation.scores?.total}, match ${evaluation.scores?.matchScore}`
+      : 'No evaluation scores',
+    evaluation?.rationale ? `Rationale: ${JSON.stringify(evaluation.rationale)}` : 'No rationale',
+    evaluation?.risks?.length ? `Risks: ${evaluation.risks.join('; ')}` : 'No risks provided',
+    evaluation?.nextInterviewQuestions?.length
+      ? `Follow-up: ${evaluation.nextInterviewQuestions.join('; ')}`
+      : 'No follow-up questions',
+    'Output: one paragraph, no bullets, 180-220 words.',
+  ].join('\n');
+
+  const completion = await openai.chat.completions.create({
+    model,
+    messages: [{ role: 'user', content: prompt }],
+    temperature: 0.35,
+    max_tokens: 320,
+  });
+  return completion.choices?.[0]?.message?.content?.trim() || null;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -66,6 +109,18 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const reviewSummary = await generateReviewSummary({
+      taskTitle: taskContext?.title,
+      points: {
+        earned: totalPoints,
+        base: basePoints,
+        bonus: speedBonus,
+        total: totalPoints,
+      },
+      offerQualified,
+      evaluation: evaluationResult,
+    });
+
     if (!supabase) {
       console.warn('[submit] Supabase not configured - skipping upload');
       return NextResponse.json({ 
@@ -73,6 +128,7 @@ export async function POST(request: NextRequest) {
         message: 'Submission received (Supabase not configured)',
         evaluation: evaluationResult,
         recordingUrl: null,
+        reviewSummary,
         points: {
           earned: totalPoints,
           base: basePoints,
@@ -108,6 +164,7 @@ export async function POST(request: NextRequest) {
       .insert({
         user_id: userId,
         task_id: taskId,
+        task_title: taskContext?.title || null,
         recording_url: recordingUrl,
         difficulty,
         category,
@@ -117,6 +174,7 @@ export async function POST(request: NextRequest) {
         session_time: sessionTime,
         code_snapshot: normalizedSnapshot,
         evaluation_json: evaluationResult,
+        review_summary: reviewSummary,
         completed_at: new Date().toISOString(),
       });
 
@@ -175,6 +233,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       recordingUrl,
+      reviewSummary,
       points: {
         earned: totalPoints,
         base: basePoints,
@@ -192,4 +251,3 @@ export async function POST(request: NextRequest) {
     );
   }
 }
-
