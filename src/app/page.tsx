@@ -10,6 +10,7 @@ import { User } from 'lucide-react';
 
 import { ProfileModal } from '@/components/ProfileModal';
 import { HowItWorksCarousel } from '@/components/HowItWorksCarousel';
+import { LearnMoreModal } from '@/components/LearnMoreModal';
 /**
  * Landing Page
  * 
@@ -22,6 +23,7 @@ export default function HomePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [user, setUser] = useState<MockUser | null>(null);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [learnMoreOpen, setLearnMoreOpen] = useState(false);
 
   // Check if user is logged in
   useEffect(() => {
@@ -178,7 +180,10 @@ export default function HomePage() {
               {isLoading ? 'Loading...' : 'Start Challenge'}
             </button>
 
-            <button className="px-8 py-4 bg-white border-2 border-gray-200 text-gray-700 rounded-lg text-lg font-semibold hover:border-gray-300 hover:shadow-lg transition-all">
+            <button
+              onClick={() => setLearnMoreOpen(true)}
+              className="px-8 py-4 bg-white border-2 border-gray-200 text-gray-700 rounded-lg text-lg font-semibold hover:border-gray-300 hover:shadow-lg transition-all"
+            >
               Learn More
             </button>
           </motion.div>
@@ -243,10 +248,13 @@ export default function HomePage() {
         </div>
       </footer>
       <ProfileModal
-  isOpen={profileOpen}
-  onClose={() => setProfileOpen(false)}
-/>
-
+        isOpen={profileOpen}
+        onClose={() => setProfileOpen(false)}
+      />
+      <LearnMoreModal
+        isOpen={learnMoreOpen}
+        onClose={() => setLearnMoreOpen(false)}
+      />
     </div>
   );
 }
