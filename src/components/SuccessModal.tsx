@@ -64,7 +64,7 @@ export function SuccessModal({
       ></div>
 
       {/* Modal */}
-      <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden">
+      <div className="relative bg-white rounded-2xl shadow-2xl w-[90vw] md:w-[72vw] lg:w-[55vw] max-w-3xl max-h-[85vh] mx-4 overflow-hidden flex flex-col">
         {/* Success Animation */}
         <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-8 text-center">
           <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
@@ -90,7 +90,7 @@ export function SuccessModal({
           </p>
         </div>
 
-        <div className="p-8">
+        <div className="p-8 flex-1 overflow-y-auto">
           {/* Offer Qualified Badge */}
           {offerQualified && (
             <div className="bg-gradient-to-r from-yellow-100 to-orange-100 border-2 border-yellow-400 rounded-xl p-4 mb-6">

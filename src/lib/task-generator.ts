@@ -9,8 +9,13 @@ import OpenAI from 'openai';
 import type { Task } from '@/types';
 
 const openai = process.env.OPENAI_API_KEY
-  ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  ? new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+      baseURL: process.env.OPENAI_BASE_URL,
+    })
   : null;
+
+const model = process.env.OPENAI_MODEL || 'gpt-4o';
 
 /**
  * Generate a coding challenge from a Git diff
@@ -136,7 +141,7 @@ Generate a complete, runnable coding challenge based on this bug. Change the bus
 
   try {
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o',
+      model,
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
@@ -209,4 +214,3 @@ export function analyzeDiffComplexity(diffText: string): {
 
   return { difficulty, category, estimatedTime };
 }
-
