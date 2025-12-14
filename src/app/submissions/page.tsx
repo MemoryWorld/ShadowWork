@@ -18,7 +18,6 @@ export default function SubmissionsPage() {
   const [subs, setSubs] = useState<SubmissionCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [source, setSource] = useState<'supabase' | 'local' | 'unknown'>('unknown');
-  const [selected, setSelected] = useState<SubmissionCard | null>(null);
 
   useEffect(() => {
     const fetchSubs = async () => {
@@ -83,10 +82,10 @@ export default function SubmissionsPage() {
         ) : (
           <div className="space-y-4">
             {subs.map((s, idx) => (
-              <button
+              <Link
                 key={s.id || idx}
-                onClick={() => setSelected(s)}
-                className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm w-full text-left hover:border-blue-200 hover:shadow-md transition"
+                href={`/submissions/${encodeURIComponent(s.id || `local-${idx}`)}`}
+                className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm w-full text-left hover:border-blue-200 hover:shadow-md transition block"
               >
                 <div className="flex items-center justify-between">
                   <div>
@@ -107,74 +106,12 @@ export default function SubmissionsPage() {
                 ) : (
                   <p className="text-xs text-slate-500 mt-1">Recording not available (demo mode)</p>
                 )}
-              </button>
+              </Link>
             ))}
           </div>
         )}
         <p className="text-xs text-slate-500">Source: {source}</p>
       </div>
-
-      {selected && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 px-4">
-          <div className="max-w-3xl w-full bg-white rounded-2xl shadow-2xl border border-slate-200 p-6 relative animate-[fadeIn_0.2s_ease]">
-            <button
-              onClick={() => setSelected(null)}
-              className="absolute top-3 right-3 text-slate-500 hover:text-slate-800"
-            >
-              ✕
-            </button>
-            <p className="text-xs uppercase tracking-[0.2em] text-slate-500 mb-1">Submission detail</p>
-            <h2 className="text-2xl font-semibold text-slate-900">{selected.task_title || 'Unknown task'}</h2>
-            <p className="text-sm text-slate-500 mb-4">{new Date(selected.created_at || Date.now()).toLocaleString()}</p>
-
-            <div className="grid md:grid-cols-2 gap-4 mb-4">
-              <StatCard label="Score" value={selected.points_earned !== undefined ? `${selected.points_earned}/100` : 'n/a'} />
-              <StatCard label="Recording" value={selected.recording_url ? 'Available' : 'Not available'} highlight={!!selected.recording_url} />
-            </div>
-
-            {selected.review_summary && (
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-4 text-sm text-slate-800 leading-relaxed">
-                {selected.review_summary}
-              </div>
-            )}
-
-            {selected.evaluation_json?.scores && (
-              <div className="space-y-2 mb-4">
-                <p className="text-sm font-semibold text-slate-800">Score breakdown</p>
-                <ScoreBars scores={selected.evaluation_json.scores} />
-              </div>
-            )}
-
-            {selected.evaluation_json?.risks?.length > 0 && (
-              <div className="mb-3">
-                <p className="text-sm font-semibold text-slate-800">Risks</p>
-                <ul className="list-disc list-inside text-sm text-slate-700 space-y-1">
-                  {selected.evaluation_json.risks.map((r: string, idx: number) => <li key={idx}>{r}</li>)}
-                </ul>
-              </div>
-            )}
-
-            <div className="flex justify-end gap-3">
-              {selected.recording_url && (
-                <a
-                  href={selected.recording_url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-800 hover:border-slate-300"
-                >
-                  View recording
-                </a>
-              )}
-              <button
-                onClick={() => setSelected(null)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:shadow-md"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -215,4 +152,3 @@ function ScoreBars({ scores }: { scores: any }) {
     </div>
   );
 }
-
