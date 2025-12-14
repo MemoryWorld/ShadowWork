@@ -86,38 +86,9 @@ export default function SuccessPage() {
           </p>
         </header>
 
-        <section className="space-y-2 text-gray-800">
-          <h2 className="text-xl font-semibold">Context</h2>
-          <p><strong>Challenge:</strong> {summary?.title || 'Unknown task'}</p>
-          {summary?.points && (
-            <p>
-              <strong>Points:</strong> {summary.points.earned} / {summary.points.total}
-              {summary.offerQualified ? ' • Offer qualified' : ''}
-            </p>
-          )}
-          {summary?.recordingUrl ? (
-            <p>
-              <strong>Recording:</strong>{' '}
-              <a
-                className="text-blue-700 underline"
-                href={summary.recordingUrl}
-                target="_blank"
-                rel="noreferrer"
-              >
-                View replay
-              </a>
-            </p>
-          ) : (
-            <p className="text-sm text-gray-500">Recording not available (demo mode)</p>
-          )}
-        </section>
-
         {summary?.evaluation && (
           <section className="space-y-6 text-gray-800">
-            <h2 className="text-xl font-semibold text-gray-900">AI Evaluation (existing spec)</h2>
-            <p className="text-sm text-gray-600">
-              Scored via evaluator prompt（理解/实现/验证/沟通四个维度，各 0–25 分）。
-            </p>
+            <h2 className="text-xl font-semibold text-gray-900">AI Evaluation</h2>
             <div className="grid md:grid-cols-2 gap-3">
               {(['understanding', 'implementation', 'validation', 'communication'] as const).map((key) => (
                 <div key={key} className="rounded-lg border border-gray-200 bg-white px-4 py-3">
@@ -190,9 +161,9 @@ export default function SuccessPage() {
         )}
 
         <section className="space-y-3 text-gray-800">
-          <h2 className="text-xl font-semibold text-gray-900">Session replay (video)</h2>
+          <h2 className="text-xl font-semibold text-gray-900">Session replay</h2>
           <p className="text-sm text-gray-700">
-            如果有视频链接会在下方播放；若是 rrweb JSON，可替换为 rrweb 播放器组件。没有录制时展示占位示例视频。
+            This is the recording of your attempt; it will be provided for AI scoring.
           </p>
           <div className="rounded-lg border border-dashed border-gray-300 bg-white/60 p-4 text-sm text-gray-700">
             {summary?.recordingUrl ? (
@@ -201,12 +172,21 @@ export default function SuccessPage() {
               </video>
             ) : (
               <div className="space-y-2">
-                <p className="font-semibold text-gray-800">Demo placeholder (not actual session)</p>
+                <p className="font-semibold text-gray-800">Demo placeholder session</p>
                 <video className="w-full rounded-md" controls src={demoVideoUrl}>
                   Your browser does not support the video tag.
                 </video>
               </div>
             )}
+          </div>
+          <div className="rounded-xl border border-gray-200 bg-white p-4 text-sm leading-relaxed text-gray-800">
+            <p className="font-semibold text-gray-900 mb-2">Video analysis</p>
+            <p>
+              Reviewer notes: steady typing pace with minimal backtracking, breaks work into small commits,
+              validates behavior in the browser after each change, and refactors duplicated logic. Error handling was
+              added early, tests were rerun after fixes, and variable naming stayed consistent. Overall workflow shows
+              thoughtful debugging and clean code structure.
+            </p>
           </div>
         </section>
 

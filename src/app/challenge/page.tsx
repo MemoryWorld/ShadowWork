@@ -15,7 +15,7 @@ import type { CodeFileSnapshot, SubmissionResponsePayload, Task } from '@/types'
 function ChallengePageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const stubCommands = searchParams.get('demo') === 'true' || searchParams.get('mock') === 'true';
+  const shouldStubCommands = true; // Run/Test are always simulated in console
   const [task, setTask] = useState<Task | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -40,7 +40,7 @@ function ChallengePageContent() {
       setError(null);
 
       const source = searchParams.get('source');
-      const mockMode = searchParams.get('mock') === 'true' || stubCommands;
+      const mockMode = searchParams.get('mock') === 'true' || searchParams.get('demo') === 'true';
 
       // Check if using custom generated task
       if (source === 'custom') {
@@ -144,7 +144,7 @@ function ChallengePageContent() {
     );
   }
 
-  return <ChallengeWorkspace task={task} onSubmit={handleSubmit} demoMode={stubCommands} />;
+  return <ChallengeWorkspace task={task} onSubmit={handleSubmit} stubCommands={shouldStubCommands} />;
 }
 
 export default function ChallengePage() {

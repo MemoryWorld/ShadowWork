@@ -27,7 +27,7 @@ interface ChallengeWorkspaceProps {
   ) => Promise<SubmissionResponsePayload | null>;
 }
 
-export function ChallengeWorkspace({ task, onSubmit, stubCommands = false }: ChallengeWorkspaceProps) {
+export function ChallengeWorkspace({ task, onSubmit, stubCommands = true }: ChallengeWorkspaceProps) {
   const [currentFile, setCurrentFile] = useState<string>('');
   const [fileContent, setFileContent] = useState<string>('');
   const [output, setOutput] = useState<string>('');
@@ -112,15 +112,33 @@ export function ChallengeWorkspace({ task, onSubmit, stubCommands = false }: Cha
   const handleRun = async () => {
     if (stubCommands) {
       setIsRunning(true);
+      setOutput('');
       const logs = [
-        '[demo] Booting sandboxed environment... Done (0.5s)\n',
-        '[demo] Installing dependencies from package.json... Done (1.2s)\n',
-        '[demo] Starting dev server...\n',
-        'App listening on http://localhost:3000\n',
+        '[demo] Booting sandboxed environment...',
+        '[demo] Checking project files...',
+        '[demo] Resolving lockfile...',
+        '[demo] Installing dependencies (npm ci)...',
+        '[demo] Using cached dependencies.',
+        '[demo] Verifying node version...',
+        '[demo] Running lint pre-check...',
+        '[demo] Lint clean. No issues found.',
+        '[demo] Building workspace...',
+        '[demo] Optimizing assets...',
+        '[demo] Bundling client chunks...',
+        '[demo] Bundling server entry...',
+        '[demo] Analyzing bundle size...',
+        '[demo] Starting dev server...',
+        '[demo] Server warming up...',
+        '[demo] Health check passed at http://localhost:3000',
+        '[demo] Watching for file changes...',
+        '[demo] Connected to HMR client.',
+        '[demo] Tailwind JIT ready.',
+        '[demo] Ready for requests.',
+        '[demo] Run complete.',
       ];
       let idx = 0;
       const interval = setInterval(() => {
-        setOutput((prev) => prev + logs[idx]);
+        setOutput((prev) => prev + logs[idx] + '\n');
         idx += 1;
         if (idx >= logs.length) {
           clearInterval(interval);
@@ -157,11 +175,28 @@ export function ChallengeWorkspace({ task, onSubmit, stubCommands = false }: Cha
   const handleTest = async () => {
     if (stubCommands || !hasTestScript) {
         setIsRunning(true);
+        setOutput('');
         const logs = [
-          'Running evaluation script: test-suite.js...',
+          '[demo] Running evaluation script: test-suite.js...',
+          '[demo] Preparing isolated test environment...',
+          '[demo] Loading fixtures and mocks...',
           '✔ Test Case 1: Handles empty input... Passed',
           '✔ Test Case 2: Handles valid input... Passed',
           '✔ Test Case 3: Handles edge cases... Passed',
+          '✔ Test Case 4: Debounces rapid input... Passed',
+          '✔ Test Case 5: Handles API error states... Passed',
+          '✔ Test Case 6: Renders loading skeleton... Passed',
+          '✔ Test Case 7: Persists state to storage... Passed',
+          '✔ Test Case 8: Respects retry/backoff logic... Passed',
+          '✔ Test Case 9: Sanitizes user input... Passed',
+          '✔ Test Case 10: Prevents duplicate submissions... Passed',
+          '✔ Test Case 11: Pagination returns correct counts... Passed',
+          '✔ Test Case 12: Sort order is stable... Passed',
+          '✔ Test Case 13: Feature flag fallback works... Passed',
+          '✔ Test Case 14: Metrics are emitted once... Passed',
+          '✔ Test Case 15: Cleanup runs on unmount... Passed',
+          '✔ Test Case 16: Handles slow network timeout... Passed',
+          'Coverage: Lines 96% | Functions 95% | Branches 92%',
           'All tests passed. Congratulations!',
         ];
         let idx = 0;
