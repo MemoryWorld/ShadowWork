@@ -15,7 +15,24 @@ import type { Task } from '@/types';
 let globalWebContainerInstance: WebContainer | null = null;
 let globalBootPromise: Promise<WebContainer> | null = null;
 
-export function useWebContainer() {
+export function useWebContainer(demoMode = false) {
+  if (demoMode) {
+    return {
+      container: null,
+      isBooting: false,
+      bootError: null,
+      isReady: true,
+      loadTask: async () => {},
+      runCommand: async () => {
+        return {
+          output: new ReadableStream(),
+          exit: Promise.resolve(0),
+        } as any;
+      },
+      writeFile: async () => {},
+      readFile: async () => '',
+    };
+  }
   const [container, setContainer] = useState<WebContainer | null>(null);
   const [isBooting, setIsBooting] = useState(false);
   const [bootError, setBootError] = useState<string | null>(null);
@@ -179,4 +196,3 @@ export function useWebContainer() {
     readFile,
   };
 }
-

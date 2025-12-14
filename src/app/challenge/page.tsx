@@ -15,6 +15,7 @@ import type { CodeFileSnapshot, SubmissionResponsePayload, Task } from '@/types'
 function ChallengePageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const demoMode = searchParams.get('demo') === 'true';
   const [task, setTask] = useState<Task | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -39,7 +40,7 @@ function ChallengePageContent() {
       setError(null);
 
       const source = searchParams.get('source');
-      const mockMode = searchParams.get('mock') === 'true';
+      const mockMode = searchParams.get('mock') === 'true' || demoMode;
 
       // Check if using custom generated task
       if (source === 'custom') {
@@ -73,6 +74,22 @@ function ChallengePageContent() {
     codeSnapshot: CodeFileSnapshot[],
     sessionTime: number
   ): Promise<SubmissionResponsePayload | null> => {
+    if (demoMode) {
+      return {
+        success: true,
+        recordingUrl: null,
+        reviewSummary: 'Demo submission',
+        points: { earned: 100, base: 100, bonus: 20, total: 120 },
+        offerQualified: true,
+        evaluation: {
+          scores: { understanding: 24, implementation: 24, validation: 24, communication: 22, total: 94, matchScore: 95 },
+          rationale: {},
+          risks: [],
+          nextInterviewQuestions: [],
+        },
+      } as SubmissionResponsePayload;
+    }
+
     if (!task || !user) return null;
 
     try {
@@ -143,7 +160,7 @@ function ChallengePageContent() {
     );
   }
 
-  return <ChallengeWorkspace task={task} onSubmit={handleSubmit} />;
+  return <ChallengeWorkspace task={task} onSubmit={handleSubmit} demoMode={demoMode} />;
 }
 
 export default function ChallengePage() {

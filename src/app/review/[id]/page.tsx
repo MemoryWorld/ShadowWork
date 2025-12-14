@@ -50,7 +50,6 @@ export default function ReviewDetail({ params }: { params: { id: string } }) {
   }, [id]);
 
   const scores = useMemo(() => submission?.evaluation_json?.scores || null, [submission]);
-  const demoVideoUrl = '/demo-placeholder.mp4';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 px-6 py-10">

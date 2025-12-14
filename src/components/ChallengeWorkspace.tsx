@@ -19,6 +19,7 @@ import { getMockUser } from '@/lib/mockAuth';
 
 interface ChallengeWorkspaceProps {
   task: Task;
+  demoMode?: boolean;
   onSubmit: (
     events: any[],
     codeSnapshot: CodeFileSnapshot[],
@@ -26,7 +27,7 @@ interface ChallengeWorkspaceProps {
   ) => Promise<SubmissionResponsePayload | null>;
 }
 
-export function ChallengeWorkspace({ task, onSubmit }: ChallengeWorkspaceProps) {
+export function ChallengeWorkspace({ task, onSubmit, demoMode = false }: ChallengeWorkspaceProps) {
   const [currentFile, setCurrentFile] = useState<string>('');
   const [fileContent, setFileContent] = useState<string>('');
   const [output, setOutput] = useState<string>('');
@@ -40,7 +41,7 @@ export function ChallengeWorkspace({ task, onSubmit }: ChallengeWorkspaceProps) 
   const router = useRouter();
 
   const { isReady, isBooting, bootError, loadTask, runCommand, writeFile, readFile } =
-    useWebContainer();
+    useWebContainer(demoMode);
 
   const {
     isRecording,
@@ -58,6 +59,22 @@ export function ChallengeWorkspace({ task, onSubmit }: ChallengeWorkspaceProps) 
 
   const initializeWorkspace = async () => {
     try {
+      if (demoMode) {
+        const editableFiles = Object.keys(task.files).filter(
+          (name) => !name.includes('package.json') && !name.includes('README')
+        );
+        if (editableFiles.length > 0) {
+          const firstFile = editableFiles[0];
+          setCurrentFile(firstFile);
+          const fileData = task.files[firstFile] as any;
+          const content =
+            typeof fileData === 'object' && 'content' in fileData ? fileData.content : JSON.stringify(fileData, null, 2);
+          setFileContent(content || '');
+        }
+        setShowBootSequence(false);
+        return;
+      }
+
       await loadTask(task);
 
       // Find first editable file (not package.json or README)
@@ -90,6 +107,26 @@ export function ChallengeWorkspace({ task, onSubmit }: ChallengeWorkspaceProps) 
   };
 
   const handleRun = async () => {
+    if (demoMode) {
+      setIsRunning(true);
+      const logs = [
+        '[demo] Booting sandboxed environment... Done (0.5s)\n',
+        '[demo] Installing dependencies from package.json... Done (1.2s)\n',
+        '[demo] Starting dev server...\n',
+        'App listening on http://localhost:3000\n',
+      ];
+      let idx = 0;
+      const interval = setInterval(() => {
+        setOutput((prev) => prev + logs[idx]);
+        idx += 1;
+        if (idx >= logs.length) {
+          clearInterval(interval);
+          setIsRunning(false);
+        }
+      }, 200);
+      return;
+    }
+
     setIsRunning(true);
     setOutput('Running...\n');
 
@@ -115,6 +152,41 @@ export function ChallengeWorkspace({ task, onSubmit }: ChallengeWorkspaceProps) 
   };
 
   const handleTest = async () => {
+    if (demoMode) {
+      setIsRunning(true);
+      const logs = [
+        '[demo] Running evaluation script: test-suite.js...',
+        '✔ Test Case 1: Handles empty input... Passed',
+        '✔ Test Case 2: Handles valid input... Passed',
+        '✔ Test Case 3: Handles edge cases... Passed',
+        'All tests passed. Congratulations!',
+      ];
+      let idx = 0;
+      const interval = setInterval(() => {
+        setOutput((prev) => prev + logs[idx] + '\n');
+        idx += 1;
+        if (idx >= logs.length) {
+          clearInterval(interval);
+          setIsRunning(false);
+          setShowSuccessModal(true);
+          setSubmissionResult({
+            success: true,
+            recordingUrl: null,
+            reviewSummary: 'Demo mode summary: solid implementation and clean handling of edge cases. Ready to proceed.',
+            points: { earned: 100, base: 100, bonus: 20, total: 120 },
+            offerQualified: true,
+            evaluation: {
+              scores: { understanding: 24, implementation: 24, validation: 24, communication: 22, total: 94, matchScore: 95 },
+              rationale: {},
+              risks: [],
+              nextInterviewQuestions: [],
+            } as any,
+          } as SubmissionResponsePayload);
+        }
+      }, 200);
+      return;
+    }
+
     setIsRunning(true);
     setOutput('Running tests...\n');
 
@@ -161,6 +233,44 @@ export function ChallengeWorkspace({ task, onSubmit }: ChallengeWorkspaceProps) 
     setIsSubmitting(true);
 
     try {
+      if (demoMode) {
+        const demoResult: SubmissionResponsePayload = {
+          success: true,
+          recordingUrl: null,
+          reviewSummary: 'Demo mode summary: strong understanding of bug pattern, clean implementation, all tests green.',
+          points: { earned: 100, base: 100, bonus: 20, total: 120 },
+          offerQualified: true,
+          evaluation: {
+            scores: { understanding: 24, implementation: 24, validation: 24, communication: 22, total: 94, matchScore: 95 },
+            rationale: {
+              understanding: ['Identified root cause quickly in demo mode'],
+              implementation: ['Patched with minimal diff in demo mode'],
+              validation: ['All demo tests passed'],
+              communication: ['Clear comments in demo'],
+            },
+            risks: [],
+            nextInterviewQuestions: [],
+          } as any,
+        };
+        setSubmissionResult(demoResult);
+        if (typeof window !== 'undefined') {
+          const user = getMockUser();
+          localStorage.setItem(
+            'shadowwork_last_submission',
+            JSON.stringify({
+              title: task.title,
+              points: demoResult.points,
+              offerQualified: demoResult.offerQualified,
+              evaluation: demoResult.evaluation,
+              recordingUrl: demoResult.recordingUrl,
+              reviewSummary: demoResult.reviewSummary,
+            })
+          );
+        }
+        setShowSuccessModal(true);
+        return;
+      }
+
       const events = stopAndGetEvents();
       const sessionTime = Math.floor((Date.now() - sessionStartTime) / 1000);
       const codeSnapshot = await captureCodeSnapshot();
