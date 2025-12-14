@@ -76,10 +76,6 @@ export default function HomePage() {
           </div>
           <nav className="flex items-center gap-6">
             <Link href="/learn-more" className="text-gray-600 hover:text-gray-900">Learn More</Link>
-            {/* Enterprise-only: Generator */}
-            {user && isEnterprise && (
-              <a href="/generate" className="text-blue-600 hover:text-blue-800 font-medium">🔬 Generator</a>
-            )}
             {user ? (
               <div className="flex items-center gap-3">
                 <button
@@ -181,7 +177,7 @@ export default function HomePage() {
             initial="hidden"
             animate="visible"
             custom={0.16}
-            className="flex items-center justify-center gap-4"
+            className="flex items-center justify-center gap-4 flex-wrap"
           >
             <button
               onClick={handleStartChallenge}
@@ -190,6 +186,14 @@ export default function HomePage() {
             >
               {isLoading ? 'Loading...' : 'Start Challenge'}
             </button>
+            {user && isEnterprise && (
+              <button
+                onClick={() => router.push('/generate')}
+                className="px-8 py-4 bg-white border-2 border-blue-100 text-blue-700 rounded-lg text-lg font-semibold hover:border-blue-300 hover:shadow-lg transition-all"
+              >
+                🔬 Generator (Enterprise)
+              </button>
+            )}
           </motion.div>
 
           <p className="text-sm text-gray-500 mt-6">
