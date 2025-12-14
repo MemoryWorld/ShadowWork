@@ -50,6 +50,7 @@ export default function ReviewDetail({ params }: { params: { id: string } }) {
   }, [id]);
 
   const scores = useMemo(() => submission?.evaluation_json?.scores || null, [submission]);
+  const demoVideoUrl = '/demo-placeholder.mp4';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 px-6 py-10">
@@ -74,8 +75,7 @@ export default function ReviewDetail({ params }: { params: { id: string } }) {
 
         {submission && (
           <div className="space-y-4">
-            <div className="grid md:grid-cols-3 gap-3">
-              <StatCard label="Score" value={submission.points_earned !== undefined ? `${submission.points_earned}/100` : 'n/a'} />
+            <div className="grid md:grid-cols-2 gap-3">
               <StatCard label="Recording" value={submission.recording_url ? 'Available' : 'Not available'} highlight={!!submission.recording_url} />
               <StatCard label="Source" value={source} />
             </div>
@@ -102,18 +102,25 @@ export default function ReviewDetail({ params }: { params: { id: string } }) {
               </div>
             )}
 
-            <div className="flex justify-end gap-3">
-              {submission.recording_url && (
+            <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+              <p className="text-sm font-semibold text-slate-800 mb-2">Session replay</p>
+              {submission.recording_url ? (
                 <a
                   href={submission.recording_url}
                   target="_blank"
                   rel="noreferrer"
-                  className="px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-800 hover:border-slate-300"
+                  className="text-sm text-blue-700 underline"
                 >
                   View recording
                 </a>
+              ) : (
+                <div className="w-full h-60 bg-gradient-to-br from-slate-100 to-slate-200 rounded-lg flex items-center justify-center text-sm text-slate-600">
+                  Video placeholder (demo)
+                </div>
               )}
             </div>
+
+            <p className="text-xs text-slate-500">Source: {source}</p>
           </div>
         )}
       </div>
@@ -157,4 +164,3 @@ function ScoreBars({ scores }: { scores: any }) {
     </div>
   );
 }
-

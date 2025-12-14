@@ -53,10 +53,6 @@ export default function ReviewPage() {
     fetchSubs();
   }, []);
 
-  const averageScore = subs.length
-    ? Math.round(subs.reduce((acc, cur) => acc + (cur.points_earned || 0), 0) / subs.length)
-    : 0;
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 px-6 py-10">
       <div className="max-w-6xl mx-auto space-y-6">
@@ -68,14 +64,6 @@ export default function ReviewPage() {
           </div>
           <Link href="/" className="text-sm text-slate-600 hover:text-slate-900">← Back</Link>
         </div>
-
-        {!loading && subs.length > 0 && (
-          <div className="grid grid-cols-3 gap-3">
-            <StatCard label="Submissions" value={subs.length.toString()} />
-            <StatCard label="Avg score" value={averageScore ? `${averageScore}/100` : 'n/a'} />
-            <StatCard label="Source" value={source} />
-          </div>
-        )}
 
         {loading ? (
           <p className="text-sm text-slate-600">Loading...</p>
@@ -230,4 +218,3 @@ function ScoreBars({ scores }: { scores: any }) {
     </div>
   );
 }
-
