@@ -469,11 +469,11 @@ export default function GeneratePage() {
                   <h4 className="font-semibold text-gray-900 mb-2">Generated Files:</h4>
                   <div className="space-y-2">
                     {Object.keys(result.files || {}).map((filename) => (
-                      <details key={filename} className="bg-gray-900 rounded-lg">
-                        <summary className="px-4 py-2 text-white font-mono text-sm cursor-pointer hover:bg-gray-800">
+                      <details key={filename} className="bg-white border border-gray-200 rounded-lg">
+                        <summary className="px-4 py-2 text-gray-800 font-mono text-sm cursor-pointer hover:bg-gray-50">
                           📄 {filename}
                         </summary>
-                        <pre className="px-4 py-3 text-gray-300 text-xs font-mono overflow-auto max-h-60">
+                        <pre className="px-4 py-3 text-gray-800 bg-gray-50 text-xs font-mono overflow-auto max-h-60">
                           {typeof result.files[filename] === 'object' && 'content' in result.files[filename]
                             ? result.files[filename].content
                             : JSON.stringify(result.files[filename], null, 2)}
