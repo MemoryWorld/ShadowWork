@@ -16,6 +16,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isEnterprise, setIsEnterprise] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,6 +39,13 @@ export default function LoginPage() {
     // Simulate API delay for realism
     setTimeout(() => {
       createMockSession(email);
+      if (typeof window !== 'undefined') {
+        if (isEnterprise) {
+          localStorage.setItem('shadowwork_role', 'enterprise');
+        } else {
+          localStorage.removeItem('shadowwork_role');
+        }
+      }
       
       // Redirect to home page
       router.push('/');
@@ -88,6 +96,20 @@ export default function LoginPage() {
               )}
             </div>
 
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="enterprise"
+                checked={isEnterprise}
+                onChange={(e) => setIsEnterprise(e.target.checked)}
+                className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+                disabled={isLoading}
+              />
+              <label htmlFor="enterprise" className="text-sm text-gray-700">
+                Sign in as enterprise (demo)
+              </label>
+            </div>
+
             {/* Demo Notice */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <p className="text-sm text-blue-800">
@@ -131,4 +153,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
