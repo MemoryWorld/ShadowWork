@@ -39,7 +39,22 @@ export function ChallengeWorkspace({ task, onSubmit, demoMode = false }: Challen
   const [submissionResult, setSubmissionResult] = useState<SubmissionResponsePayload | null>(null);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const router = useRouter();
-  const [hasTestScript, setHasTestScript] = useState<boolean>(true);
+  const [hasTestScript, setHasTestScript] = useState<boolean>(false);
+
+  const detectTestScript = (pkgContent: any) => {
+    try {
+      let parsed: any = pkgContent;
+      if (typeof pkgContent === 'string') {
+        parsed = JSON.parse(pkgContent);
+      }
+      if (pkgContent && typeof pkgContent === 'object' && 'content' in pkgContent) {
+        parsed = JSON.parse(pkgContent.content as string);
+      }
+      setHasTestScript(Boolean(parsed?.scripts?.test));
+    } catch {
+      setHasTestScript(false);
+    }
+  };
 
   const { isReady, isBooting, bootError, loadTask, runCommand, writeFile, readFile } =
     useWebContainer(demoMode);
@@ -73,19 +88,8 @@ export function ChallengeWorkspace({ task, onSubmit, demoMode = false }: Challen
           setFileContent(content || '');
         }
         // detect test script
-        try {
-          const pkg = task.files['package.json'] as any;
-          if (pkg) {
-            const content =
-              typeof pkg === 'object' && 'content' in pkg ? pkg.content : typeof pkg === 'string' ? pkg : '';
-            if (content) {
-              const parsed = JSON.parse(content);
-              setHasTestScript(Boolean(parsed?.scripts?.test));
-            }
-          }
-        } catch {
-          setHasTestScript(false);
-        }
+        const pkg = task.files['package.json'] as any;
+        if (pkg) detectTestScript(pkg);
         setShowBootSequence(false);
         return;
       }
@@ -104,19 +108,8 @@ export function ChallengeWorkspace({ task, onSubmit, demoMode = false }: Challen
         setFileContent(content);
       }
 
-      try {
-        const pkg = task.files['package.json'] as any;
-        if (pkg) {
-          const content =
-            typeof pkg === 'object' && 'content' in pkg ? pkg.content : typeof pkg === 'string' ? pkg : '';
-          if (content) {
-            const parsed = JSON.parse(content);
-            setHasTestScript(Boolean(parsed?.scripts?.test));
-          }
-        }
-      } catch {
-        setHasTestScript(false);
-      }
+      const pkg = task.files['package.json'] as any;
+      if (pkg) detectTestScript(pkg);
 
       // Start recording when workspace is ready
       startRecording();
