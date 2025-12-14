@@ -7,8 +7,6 @@ import { motion } from 'framer-motion';
 import { fadeUp } from '@/lib/animation';
 import { Background } from '../components/ui/Background';
 import { User } from 'lucide-react';
-
-import { ProfileModal } from '@/components/ProfileModal';
 /**
  * Landing Page
  * 
@@ -20,7 +18,6 @@ export default function HomePage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [user, setUser] = useState<MockUser | null>(null);
-  const [profileOpen, setProfileOpen] = useState(false);
 
   // Check if user is logged in
   useEffect(() => {
@@ -64,26 +61,18 @@ export default function HomePage() {
             <span className="text-xl font-bold text-gray-900">ShadowWork</span>
           </div>
           <nav className="flex items-center gap-6">
-          <button
-            onClick={() => setProfileOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-medium
-                      border border-slate-300 rounded-lg
-                      text-slate-700
-                      hover:bg-slate-50 hover:border-slate-400
-                      transition-colors"
-          >
-            <User size={16} />
-            <span>Profile</span>
-          </button>
-
             <a href="#features" className="text-gray-600 hover:text-gray-900">Features</a>
             <a href="#how-it-works" className="text-gray-600 hover:text-gray-900">How It Works</a>
             <a href="/generate" className="text-blue-600 hover:text-blue-800 font-medium">🔬 Generator</a>
             {user ? (
               <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 rounded-lg">
-                  <span className="text-sm font-medium text-blue-700">{user.email}</span>
-                </div>
+                <button
+                  onClick={() => router.push('/profile')}
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-colors"
+                >
+                  <User size={16} />
+                  <span>{user.email}</span>
+                </button>
                 <button
                   onClick={handleLogout}
                   className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
@@ -92,12 +81,21 @@ export default function HomePage() {
                 </button>
               </div>
             ) : (
-              <button
-                onClick={handleLogin}
-                className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
-              >
-                Sign In
-              </button>
+              <>
+                <button
+                  onClick={() => router.push('/profile')}
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-medium border border-slate-300 rounded-lg text-slate-700 hover:bg-slate-50 hover:border-slate-400 transition-colors"
+                >
+                  <User size={16} />
+                  <span>Profile</span>
+                </button>
+                <button
+                  onClick={handleLogin}
+                  className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
+                >
+                  Sign In
+                </button>
+              </>
             )}
           </nav>
         </div>
@@ -231,11 +229,6 @@ export default function HomePage() {
           <p className="mt-2">Built with Next.js, WebContainers, and rrweb</p>
         </div>
       </footer>
-      <ProfileModal
-  isOpen={profileOpen}
-  onClose={() => setProfileOpen(false)}
-/>
-
     </div>
   );
 }
@@ -277,4 +270,3 @@ function StepCard({
     </div>
   );
 }
-

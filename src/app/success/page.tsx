@@ -13,6 +13,7 @@ type StoredSummary = {
 
 export default function SuccessPage() {
   const [summary, setSummary] = useState<StoredSummary | null>(null);
+  const demoVideoUrl = 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4';
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -126,7 +127,7 @@ export default function SuccessPage() {
         <section className="space-y-3 text-gray-800">
           <h2 className="text-xl font-semibold text-gray-900">Session replay (video)</h2>
           <p className="text-sm text-gray-700">
-            如果有视频链接会在下方播放；若是 rrweb JSON，可替换为 rrweb 播放器组件。
+            如果有视频链接会在下方播放；若是 rrweb JSON，可替换为 rrweb 播放器组件。没有录制时展示占位示例视频。
           </p>
           <div className="rounded-lg border border-dashed border-gray-300 bg-white/60 p-4 text-sm text-gray-700">
             {summary?.recordingUrl ? (
@@ -134,7 +135,12 @@ export default function SuccessPage() {
                 Your browser does not support the video tag.
               </video>
             ) : (
-              <p>No video available. Placeholder for a future replay component.</p>
+              <div className="space-y-2">
+                <p className="font-semibold text-gray-800">Demo placeholder (not actual session)</p>
+                <video className="w-full rounded-md" controls src={demoVideoUrl}>
+                  Your browser does not support the video tag.
+                </video>
+              </div>
             )}
           </div>
         </section>
