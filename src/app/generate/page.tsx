@@ -78,7 +78,8 @@ export default function GeneratePage() {
     const resumeRepo = resumeProfile.recommendedRepos?.[0];
     const candidate = ghRepo || resumeRepo;
     if (candidate) {
-      setRepoUrl(candidate);
+      const withPrefix = candidate.startsWith('http') ? candidate : `https://github.com/${candidate}`;
+      setRepoUrl(withPrefix);
       setRepoPrefilled(true);
     }
   }, [githubProfile, repoPrefilled, resumeProfile.recommendedRepos]);
@@ -94,6 +95,7 @@ export default function GeneratePage() {
     new Set([...(resumeProfile.recommendedRepos || []), ...((githubProfile?.suggestedRepos as string[]) || [])])
   );
   const quickRepos = Array.from(new Set([...personalizedRepos, ...popularRepos]));
+  const formatRepoLabel = (repo: string) => (repo.startsWith('http') ? repo : `https://github.com/${repo}`);
   const showResumeBanner = mounted && (resumeProfile.techStack.length > 0 || resumeProfile.recommendedRepos.length > 0);
   const showRecommended = mounted && personalizedRepos.length > 0;
 
@@ -259,11 +261,11 @@ export default function GeneratePage() {
                   {resumeProfile.recommendedRepos.map((repo) => (
                     <button
                       key={repo}
-                      onClick={() => setRepoUrl(repo)}
+                      onClick={() => setRepoUrl(formatRepoLabel(repo))}
                       className="px-3 py-1 bg-white text-blue-700 rounded-lg text-xs border border-blue-200 hover:bg-blue-100"
                       disabled={isLoading}
                     >
-                      {repo}
+                      {formatRepoLabel(repo)}
                     </button>
                   ))}
                 </div>
@@ -288,7 +290,7 @@ export default function GeneratePage() {
                 {personalizedRepos.map((repo) => (
                   <button
                     key={repo}
-                    onClick={() => setRepoUrl(repo)}
+                    onClick={() => setRepoUrl(formatRepoLabel(repo))}
                     className="px-3 py-2 bg-white text-gray-800 rounded-lg text-xs border border-gray-200 hover:border-blue-300 hover:bg-blue-50 shadow-sm"
                     disabled={isLoading}
                     title={
@@ -297,7 +299,7 @@ export default function GeneratePage() {
                         : 'From your GitHub handle'
                     }
                   >
-                    <div className="font-semibold">{repo}</div>
+                    <div className="font-semibold">{formatRepoLabel(repo)}</div>
                     <div className="text-[11px] text-gray-500">
                       {resumeProfile.recommendedRepos.includes(repo) ? 'Resume match' : 'GitHub activity'}
                     </div>
@@ -314,11 +316,11 @@ export default function GeneratePage() {
               {quickRepos.map((repo) => (
                 <button
                   key={repo}
-                  onClick={() => setRepoUrl(repo)}
+                  onClick={() => setRepoUrl(formatRepoLabel(repo))}
                   className="px-3 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
                   disabled={isLoading}
                 >
-                  {repo}
+                  {formatRepoLabel(repo)}
                 </button>
               ))}
             </div>
