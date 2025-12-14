@@ -76,6 +76,16 @@ export default function HomePage() {
           </div>
           <nav className="flex items-center gap-6">
             <Link href="/learn-more" className="text-gray-600 hover:text-gray-900">Learn More</Link>
+            {user && (
+              <Link href="/submissions" className="text-gray-600 hover:text-gray-900 text-sm font-medium">
+                My Submissions
+              </Link>
+            )}
+            {user && isEnterprise && (
+              <Link href="/review" className="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                Review (Enterprise)
+              </Link>
+            )}
             {user ? (
               <div className="flex items-center gap-3">
                 <button
