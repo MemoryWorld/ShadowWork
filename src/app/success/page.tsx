@@ -9,14 +9,19 @@ type StoredSummary = {
   offerQualified?: boolean;
   evaluation?: EvaluationResult | null;
   recordingUrl?: string | null;
+  reviewSummary?: string;
 };
 
 export default function SuccessPage() {
   const [summary, setSummary] = useState<StoredSummary | null>(null);
+  const [reviewText, setReviewText] = useState<string | null>(null);
+  const [reviewStatus, setReviewStatus] = useState<'idle' | 'loading' | 'error'>('idle');
+  const [mounted, setMounted] = useState(false);
   const demoVideoUrl = 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4';
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
+    setMounted(true);
     const stored = localStorage.getItem('shadowwork_last_submission');
     if (stored) {
       try {
@@ -26,6 +31,49 @@ export default function SuccessPage() {
       }
     }
   }, []);
+
+  useEffect(() => {
+    if (!summary || !mounted) return;
+    // If already generated, use cached
+    if (summary.reviewSummary) {
+      setReviewText(summary.reviewSummary);
+      return;
+    }
+
+    const generateReview = async () => {
+      try {
+        setReviewStatus('loading');
+        const response = await fetch('/api/review-summary', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            taskTitle: summary.title,
+            points: summary.points,
+            offerQualified: summary.offerQualified,
+            evaluation: summary.evaluation,
+          }),
+        });
+        if (!response.ok) throw new Error('Failed to generate');
+        const data = await response.json();
+        if (data?.summary) {
+          setReviewText(data.summary);
+          // cache back to localStorage
+          if (typeof window !== 'undefined') {
+            const next = { ...summary, reviewSummary: data.summary };
+            localStorage.setItem('shadowwork_last_submission', JSON.stringify(next));
+          }
+        } else {
+          throw new Error('No summary returned');
+        }
+        setReviewStatus('idle');
+      } catch (err) {
+        console.error('[success] review summary error', err);
+        setReviewStatus('error');
+      }
+    };
+
+    generateReview();
+  }, [summary, mounted]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-blue-50 flex items-center justify-center">
@@ -121,6 +169,23 @@ export default function SuccessPage() {
                 </ul>
               </div>
             </div>
+          </section>
+        )}
+
+        {(reviewText || reviewStatus === 'loading') && (
+          <section className="space-y-3 text-gray-800">
+            <h2 className="text-xl font-semibold text-gray-900">AI Reviewer Summary</h2>
+            {reviewStatus === 'loading' && (
+              <p className="text-sm text-blue-700">Generating reviewer-style summary...</p>
+            )}
+            {reviewStatus === 'error' && (
+              <p className="text-sm text-red-600">AI review failed. Please try again.</p>
+            )}
+            {reviewText && (
+              <div className="rounded-xl border border-gray-200 bg-white p-4 text-sm leading-relaxed text-gray-800">
+                {reviewText}
+              </div>
+            )}
           </section>
         )}
 
