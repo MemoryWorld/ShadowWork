@@ -71,6 +71,7 @@ export default function HomePage() {
             <span className="text-xl font-bold text-gray-900">ShadowWork</span>
           </div>
           <nav className="flex items-center gap-6">
+            <Link href="/learn-more" className="text-gray-600 hover:text-gray-900">Learn More</Link>
             {/* Enterprise-only: Generator */}
             {isEnterprise && (
               <a href="/generate" className="text-blue-600 hover:text-blue-800 font-medium">🔬 Generator</a>
