@@ -467,19 +467,32 @@ export default function GeneratePage() {
                 {/* Files */}
                 <div>
                   <h4 className="font-semibold text-gray-900 mb-2">Generated Files:</h4>
-                  <div className="space-y-2">
-                    {Object.keys(result.files || {}).map((filename) => (
-                      <details key={filename} className="bg-gray-900 rounded-lg">
-                        <summary className="px-4 py-2 text-white font-mono text-sm cursor-pointer hover:bg-gray-800">
-                          📄 {filename}
-                        </summary>
-                        <pre className="px-4 py-3 text-gray-300 text-xs font-mono overflow-auto max-h-60">
-                          {typeof result.files[filename] === 'object' && 'content' in result.files[filename]
-                            ? result.files[filename].content
-                            : JSON.stringify(result.files[filename], null, 2)}
-                        </pre>
-                      </details>
-                    ))}
+                  <div className="space-y-3">
+                    {Object.keys(result.files || {}).map((filename) => {
+                      const content =
+                        typeof result.files[filename] === 'object' && 'content' in result.files[filename]
+                          ? result.files[filename].content
+                          : JSON.stringify(result.files[filename], null, 2);
+                      return (
+                        <div key={filename} className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm">
+                          <div className="flex items-center justify-between px-4 py-2 bg-gray-50 border-b border-gray-200">
+                            <div className="flex items-center gap-2">
+                              <span className="text-gray-500">📄</span>
+                              <span className="font-mono text-sm text-gray-800">{filename}</span>
+                            </div>
+                            <button
+                              onClick={() => navigator.clipboard.writeText(content)}
+                              className="text-xs text-blue-600 hover:text-blue-700 font-semibold"
+                            >
+                              Copy
+                            </button>
+                          </div>
+                          <pre className="px-4 py-3 text-gray-800 bg-gray-900/90 text-xs font-mono overflow-auto max-h-72 text-left">
+                            {content}
+                          </pre>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
 
