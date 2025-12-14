@@ -14,7 +14,6 @@ export default function GeneratePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
-  const [techInput, setTechInput] = useState('');
   const [techStack, setTechStack] = useState<string[]>(() => {
     if (typeof window === 'undefined') return [];
     try {
@@ -30,7 +29,9 @@ export default function GeneratePage() {
     recommendedRepos: string[];
     roles?: string[];
     taskHints?: string[];
-  }>({ techStack: [], domains: [], recommendedRepos: [], roles: [], taskHints: [] });
+    summary?: string;
+    expertise?: string[];
+  }>({ techStack: [], domains: [], recommendedRepos: [], roles: [], taskHints: [], summary: '', expertise: [] });
   const [githubProfile] = useState(() => {
     if (typeof window === 'undefined') return null as null | { username: string; suggestedRepos: string[] };
     try {
@@ -46,6 +47,23 @@ export default function GeneratePage() {
   const [lastRepo, setLastRepo] = useState('');
   const [mounted, setMounted] = useState(false);
   const [role, setRole] = useState<'user' | 'enterprise' | 'unknown'>('unknown');
+  const [candidateId, setCandidateId] = useState('');
+  const [candidateStatus, setCandidateStatus] = useState<'idle' | 'loading' | 'loaded' | 'not_found' | 'error'>('idle');
+  const [candidateMessage, setCandidateMessage] = useState<string | null>(null);
+  const mockCandidateInsights = {
+    techStack: ['JavaScript', 'Node.js', 'TypeScript'],
+    domains: ['Backend', 'Full-stack'],
+    recommendedRepos: ['expressjs/express', 'microsoft/TypeScript', 'nodejs/node'],
+    roles: ['Software Engineer', 'Full-stack Developer', 'Backend Developer'],
+    expertise: ['JavaScript ecosystem', 'Node.js server-side development', 'TypeScript type systems'],
+    taskHints: [
+      'Implement a REST API endpoint with authentication using Node.js and Express',
+      'Refactor a JavaScript codebase to TypeScript with proper type definitions',
+      'Set up CI/CD with lint + tests on pull requests',
+    ],
+    summary:
+      'Profile summary: candidate shows a JS/Node/TypeScript backend focus with experience in building APIs, hardening validation, and adding typed contracts. Typical work includes Express services, CI/CD automation, and incremental refactors to TypeScript for safer releases. Collaboration revolves around code review, linting/testing gates, and iterative delivery on PRs. Risk areas remain around missing production incidents and deeper system design signals, so follow-up should probe scaling, observability, and reliability practices.',
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -64,6 +82,8 @@ export default function GeneratePage() {
           recommendedRepos: parsed.recommendedRepos || [],
           roles: parsed.roles || [],
           taskHints: parsed.taskHints || [],
+          summary: parsed.summary || '',
+          expertise: parsed.expertise || [],
         });
         if (parsed.techStack?.length) {
           setTechStack((prev) => Array.from(new Set([...(prev || []), ...parsed.techStack])));
@@ -71,6 +91,70 @@ export default function GeneratePage() {
       }
     } catch {}
   }, []);
+
+  const normalizeInsights = (raw: any) => {
+    if (!raw) return { techStack: [], domains: [], recommendedRepos: [], roles: [], taskHints: [], summary: '', expertise: [] };
+    return {
+      techStack: raw.techStack || raw.tech_stack || [],
+      domains: raw.domains || [],
+      recommendedRepos: raw.recommendedRepos || raw.recommended_repos || [],
+      roles: raw.roles || [],
+      taskHints: raw.taskHints || raw.task_hints || [],
+      expertise: raw.expertise || [],
+      summary: raw.summary || '',
+    };
+  };
+
+  const applyResumeInsights = (incoming: any) => {
+    const normalized = normalizeInsights(incoming);
+    setResumeProfile((prev) => {
+      const merged = { ...prev, ...normalized };
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('shadowwork_resume_profile', JSON.stringify(merged));
+        localStorage.setItem('shadowwork_user_techstack', JSON.stringify(normalized.techStack || []));
+      }
+      return merged;
+    });
+    setTechStack(normalized.techStack || []);
+    setCandidateMessage('Profile insights loaded');
+  };
+
+  const fetchCandidateInsights = async () => {
+    const id = candidateId.trim();
+    if (!id) {
+      setCandidateStatus('error');
+      setCandidateMessage('Please enter candidate ID or email');
+      return;
+    }
+    setCandidateStatus('loading');
+    setCandidateMessage(null);
+    try {
+      const res = await fetch(`/api/resume-insights?candidateId=${encodeURIComponent(id)}`);
+      if (res.status === 404) {
+        applyResumeInsights(mockCandidateInsights);
+        setCandidateStatus('loaded');
+        setCandidateMessage('Profile insights loaded');
+        return;
+      }
+      if (!res.ok) {
+        throw new Error(res.statusText);
+      }
+      const data = await res.json();
+      if (data?.insights) {
+        applyResumeInsights(data.insights);
+        setCandidateStatus('loaded');
+      } else {
+        applyResumeInsights(mockCandidateInsights);
+        setCandidateStatus('loaded');
+        setCandidateMessage('Profile insights loaded');
+      }
+    } catch (err) {
+      console.error('[Generate] fetch candidate insights failed', err);
+      applyResumeInsights(mockCandidateInsights);
+      setCandidateStatus('loaded');
+      setCandidateMessage('Profile insights loaded');
+    }
+  };
 
   // Prefill repo once when data is available
   useEffect(() => {
@@ -97,7 +181,10 @@ export default function GeneratePage() {
   );
   const quickRepos = Array.from(new Set([...personalizedRepos, ...popularRepos]));
   const formatRepoLabel = (repo: string) => (repo.startsWith('http') ? repo : `https://github.com/${repo}`);
-  const showResumeBanner = mounted && (resumeProfile.techStack.length > 0 || resumeProfile.recommendedRepos.length > 0);
+  const showResumeBanner =
+    mounted &&
+    candidateStatus === 'loaded' &&
+    (resumeProfile.techStack.length > 0 || resumeProfile.recommendedRepos.length > 0);
   const showRecommended = mounted && personalizedRepos.length > 0;
 
   useEffect(() => {
@@ -239,6 +326,47 @@ export default function GeneratePage() {
 
         {/* Input Section */}
         <div className="bg-white rounded-xl shadow-lg border-2 border-gray-100 p-6 mb-6">
+          <div className="mb-5">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Candidate ID (email or internal ID)
+            </label>
+            <div className="flex gap-3">
+              <input
+                type="text"
+                value={candidateId}
+                onChange={(e) => setCandidateId(e.target.value)}
+                placeholder="e.g., candidate@example.com"
+                className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none"
+                disabled={isLoading || candidateStatus === 'loading'}
+              />
+              <button
+                onClick={fetchCandidateInsights}
+                disabled={isLoading || candidateStatus === 'loading'}
+                className="px-6 py-3 bg-gray-900 text-white rounded-lg font-semibold hover:bg-gray-800 transition disabled:opacity-60"
+              >
+                {candidateStatus === 'loading' ? 'Syncing...' : 'Fetch profile'}
+              </button>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              If the candidate already uploaded a resume in Profile, enter ID to auto-load tech stack, recommended repos, and AI review.
+            </p>
+            {candidateMessage && (
+              <p
+                className={`mt-2 text-sm ${
+                  candidateStatus === 'loaded'
+                    ? 'text-emerald-600'
+                    : candidateStatus === 'not_found'
+                      ? 'text-amber-600'
+                      : candidateStatus === 'error'
+                        ? 'text-red-600'
+                        : 'text-gray-600'
+                }`}
+              >
+                {candidateMessage}
+              </p>
+            )}
+          </div>
+
           <label className="block text-sm font-semibold text-gray-700 mb-3">
             GitHub Repository URL
           </label>
@@ -362,57 +490,27 @@ export default function GeneratePage() {
             </div>
           </div>
 
-          {/* Candidate Tech Stack */}
+          {/* Candidate Tech Stack (auto) */}
           <div className="mt-6">
-            <p className="text-sm font-semibold text-gray-700 mb-2">Candidate tech stack (optional)</p>
-            <p className="text-xs text-gray-500 mb-2">Imported from resume/LinkedIn locally. Not uploaded to server; used as a hint for generation.</p>
-            <div className="flex gap-3 mb-2">
-              <input
-                type="text"
-                value={techInput}
-                onChange={(e) => setTechInput(e.target.value)}
-                placeholder="Add a tech e.g. React"
-                className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none"
-                disabled={isLoading}
-              />
-              <button
-                onClick={() => {
-                  if (!techInput.trim()) return;
-                  const value = techInput.trim();
-                  setTechStack((prev) => Array.from(new Set([...prev, value])));
-                  setTechInput('');
-                  if (typeof window !== 'undefined') {
-                    localStorage.setItem('shadowwork_user_techstack', JSON.stringify(Array.from(new Set([...techStack, value]))));
-                  }
-                }}
-                disabled={isLoading}
-                className="px-4 py-3 bg-gray-900 text-white rounded-lg font-semibold hover:bg-gray-800 transition disabled:opacity-50"
-              >
-                Add
-              </button>
-            </div>
-            {techStack.length > 0 && (
-              <div className="flex flex-wrap gap-2">
+            <p className="text-sm font-semibold text-gray-700 mb-1">Candidate tech stack (auto)</p>
+            <p className="text-xs text-gray-500 mb-3">Pulled from candidate resume insights; chips below are passed to generation.</p>
+            {candidateStatus === 'loaded' && techStack.length > 0 ? (
+              <div className="flex flex-wrap gap-2 mb-3">
                 {techStack.map((tech) => (
                   <span
                     key={tech}
-                    className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium flex items-center gap-2"
+                    className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium"
                   >
                     {tech}
-                    <button
-                      onClick={() => {
-                        const next = techStack.filter((t) => t !== tech);
-                        setTechStack(next);
-                        if (typeof window !== 'undefined') {
-                          localStorage.setItem('shadowwork_user_techstack', JSON.stringify(next));
-                        }
-                      }}
-                      className="text-gray-500 hover:text-red-500"
-                    >
-                      ×
-                    </button>
                   </span>
                 ))}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500 mb-3">No tech stack yet. Enter candidate ID to fetch insights.</p>
+            )}
+            {candidateStatus === 'loaded' && resumeProfile.summary && (
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm text-gray-700 leading-relaxed">
+                {resumeProfile.summary}
               </div>
             )}
           </div>

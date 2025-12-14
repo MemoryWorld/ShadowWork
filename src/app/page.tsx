@@ -134,13 +134,6 @@ export default function HomePage() {
             Privacy-First Technical Assessment
           </div>
 
-          {/* <h1 className="text-6xl font-bold text-gray-900 mb-6 leading-tight">
-            Zero-Resume,
-            <br />
-            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Proof-of-Work
-            </span>
-          </h1> */}
           <motion.h1
             variants={fadeUp}
             initial="hidden"
@@ -154,11 +147,6 @@ export default function HomePage() {
               Proof-of-Work
             </span>
           </motion.h1>
-          {/* <p className="text-xl text-gray-600 mb-12 leading-relaxed">
-            Turn real-world engineering issues into ephemeral, browser-based coding challenges.
-            <br />
-            No IP leakage. No resume bias. Pure skill demonstration.
-          </p> */}
           <motion.p
             variants={fadeUp}
             initial="hidden"
@@ -170,18 +158,6 @@ export default function HomePage() {
             <br />
             No IP leakage. No resume bias. Pure skill demonstration.
           </motion.p>
-          {/* <div className="flex items-center justify-center gap-4">
-            <button
-              onClick={handleStartChallenge}
-              disabled={isLoading}
-              className="px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg text-lg font-semibold hover:shadow-xl transition-all disabled:opacity-50"
-            >
-              {isLoading ? 'Loading...' : 'Start Challenge'}
-            </button>
-            <button className="px-8 py-4 bg-white border-2 border-gray-200 text-gray-700 rounded-lg text-lg font-semibold hover:border-gray-300 hover:shadow-lg transition-all">
-              Learn More
-            </button>
-          </div> */}
           <motion.div
             variants={fadeUp}
             initial="hidden"

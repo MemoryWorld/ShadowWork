@@ -14,7 +14,7 @@ const model = process.env.OPENAI_MODEL || 'gpt-4o';
 export async function POST(req: NextRequest) {
   try {
     if (!openai) {
-      return NextResponse.json({ error: 'OpenAI not configured' }, { status: 500 });
+      return NextResponse.json({ error: 'OpenAI not configured', supabase: { inserted: false, reason: 'openai_missing' } }, { status: 500 });
     }
 
     const body = await req.json();
@@ -45,11 +45,14 @@ export async function POST(req: NextRequest) {
 
     const parsed = JSON.parse(completion.choices[0].message.content || '{}');
 
+    let supabaseInserted = false;
+    let supabaseError: string | undefined;
+
     // Optional: store to Supabase if available
     if (supabase) {
       try {
         await supabase.from('resume_insights').insert({
-          user_email: userEmail || null,
+          user_email: userEmail ? String(userEmail).toLowerCase() : null,
           tech_stack: parsed.techStack || techStack || [],
           domains: parsed.domains || [],
           years_experience: parsed.yearsExperience || null,
@@ -61,12 +64,20 @@ export async function POST(req: NextRequest) {
           summary: parsed.summary || null,
           created_at: new Date().toISOString(),
         });
+        supabaseInserted = true;
       } catch (err) {
+        supabaseError = err instanceof Error ? err.message : 'unknown supabase insert error';
         console.warn('[analyze-resume] supabase insert skipped:', err);
       }
+    } else {
+      supabaseError = 'supabase not configured';
     }
 
-    return NextResponse.json({ success: true, insights: parsed });
+    return NextResponse.json({
+      success: true,
+      insights: parsed,
+      supabase: { inserted: supabaseInserted, error: supabaseError, userEmail: userEmail || null },
+    });
   } catch (error) {
     console.error('[analyze-resume] error:', error);
     return NextResponse.json({ error: 'Failed to analyze resume' }, { status: 500 });

@@ -81,6 +81,26 @@ export default function SubmissionDetail({ params }: { params: { id: string } })
               </div>
             )}
 
+            <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+              <p className="text-sm font-semibold text-slate-800 mb-2">Session replay</p>
+              {submission.recording_url ? (
+                <a
+                  href={submission.recording_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-sm text-blue-700 underline"
+                >
+                  View recording
+                </a>
+              ) : (
+                <div className="w-full h-60 bg-gradient-to-br from-slate-100 to-slate-200 rounded-lg flex flex-col items-center justify-center text-sm text-slate-600">
+                  <div className="w-16 h-16 rounded-full bg-slate-300/70 animate-pulse mb-3" />
+                  <p className="font-semibold text-slate-700">Video placeholder</p>
+                  <p className="text-xs text-slate-500">Recording will appear here after submission.</p>
+                </div>
+              )}
+            </div>
+
             {scores && (
               <div className="space-y-2 bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
                 <p className="text-sm font-semibold text-slate-800">Score breakdown</p>
@@ -141,4 +161,3 @@ function ScoreBars({ scores }: { scores: any }) {
     </div>
   );
 }
-

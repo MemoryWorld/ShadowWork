@@ -180,7 +180,7 @@ const [analysisStatus, setAnalysisStatus] = useState<'idle' | 'analyzing' | 'err
       const response = await fetch('/api/analyze-resume', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ resumeText, techStack: stack }),
+        body: JSON.stringify({ resumeText, techStack: stack, userEmail: user?.email || undefined }),
       });
       if (!response.ok) throw new Error('Analyze failed');
       const data = await response.json();
