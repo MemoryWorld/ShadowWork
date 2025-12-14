@@ -15,7 +15,7 @@ import type { CodeFileSnapshot, SubmissionResponsePayload, Task } from '@/types'
 function ChallengePageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const demoMode = searchParams.get('demo') === 'true' || searchParams.get('mock') === 'true';
+  const demoMode = searchParams.get('demo') === 'true';
   const [task, setTask] = useState<Task | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

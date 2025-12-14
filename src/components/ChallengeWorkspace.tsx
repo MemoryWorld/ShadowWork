@@ -241,44 +241,6 @@ export function ChallengeWorkspace({ task, onSubmit, demoMode = false }: Challen
     setIsSubmitting(true);
 
     try {
-      if (demoMode) {
-        const demoResult: SubmissionResponsePayload = {
-          success: true,
-          recordingUrl: null,
-          reviewSummary: 'Demo mode summary: strong understanding of bug pattern, clean implementation, all tests green.',
-          points: { earned: 100, base: 100, bonus: 20, total: 120 },
-          offerQualified: true,
-          evaluation: {
-            scores: { understanding: 24, implementation: 24, validation: 24, communication: 22, total: 94, matchScore: 95 },
-            rationale: {
-              understanding: ['Identified root cause quickly in demo mode'],
-              implementation: ['Patched with minimal diff in demo mode'],
-              validation: ['All demo tests passed'],
-              communication: ['Clear comments in demo'],
-            },
-            risks: [],
-            nextInterviewQuestions: [],
-          } as any,
-        };
-        setSubmissionResult(demoResult);
-        if (typeof window !== 'undefined') {
-          const user = getMockUser();
-          localStorage.setItem(
-            'shadowwork_last_submission',
-            JSON.stringify({
-              title: task.title,
-              points: demoResult.points,
-              offerQualified: demoResult.offerQualified,
-              evaluation: demoResult.evaluation,
-              recordingUrl: demoResult.recordingUrl,
-              reviewSummary: demoResult.reviewSummary,
-            })
-          );
-        }
-        router.push('/success');
-        return;
-      }
-
       const events = stopAndGetEvents();
       const sessionTime = Math.floor((Date.now() - sessionStartTime) / 1000);
       const codeSnapshot = await captureCodeSnapshot();
