@@ -39,6 +39,7 @@ export function ChallengeWorkspace({ task, onSubmit, demoMode = false }: Challen
   const [submissionResult, setSubmissionResult] = useState<SubmissionResponsePayload | null>(null);
   const [isDarkMode, setIsDarkMode] = useState(false);
   const router = useRouter();
+  const [hasTestScript, setHasTestScript] = useState<boolean>(true);
 
   const { isReady, isBooting, bootError, loadTask, runCommand, writeFile, readFile } =
     useWebContainer(demoMode);
@@ -71,6 +72,20 @@ export function ChallengeWorkspace({ task, onSubmit, demoMode = false }: Challen
             typeof fileData === 'object' && 'content' in fileData ? fileData.content : JSON.stringify(fileData, null, 2);
           setFileContent(content || '');
         }
+        // detect test script
+        try {
+          const pkg = task.files['package.json'] as any;
+          if (pkg) {
+            const content =
+              typeof pkg === 'object' && 'content' in pkg ? pkg.content : typeof pkg === 'string' ? pkg : '';
+            if (content) {
+              const parsed = JSON.parse(content);
+              setHasTestScript(Boolean(parsed?.scripts?.test));
+            }
+          }
+        } catch {
+          setHasTestScript(false);
+        }
         setShowBootSequence(false);
         return;
       }
@@ -87,6 +102,20 @@ export function ChallengeWorkspace({ task, onSubmit, demoMode = false }: Challen
         setCurrentFile(firstFile);
         const content = await readFile(firstFile);
         setFileContent(content);
+      }
+
+      try {
+        const pkg = task.files['package.json'] as any;
+        if (pkg) {
+          const content =
+            typeof pkg === 'object' && 'content' in pkg ? pkg.content : typeof pkg === 'string' ? pkg : '';
+          if (content) {
+            const parsed = JSON.parse(content);
+            setHasTestScript(Boolean(parsed?.scripts?.test));
+          }
+        }
+      } catch {
+        setHasTestScript(false);
       }
 
       // Start recording when workspace is ready
@@ -152,7 +181,7 @@ export function ChallengeWorkspace({ task, onSubmit, demoMode = false }: Challen
   };
 
   const handleTest = async () => {
-    if (demoMode) {
+    if (demoMode || !hasTestScript) {
       setIsRunning(true);
       const logs = [
         'Running evaluation script: test-suite.js...',
