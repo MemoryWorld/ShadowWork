@@ -179,35 +179,21 @@ export function ChallengeWorkspace({ task, onSubmit, demoMode = false }: Challen
         const logs = [
           'Running evaluation script: test-suite.js...',
           '✔ Test Case 1: Handles empty input... Passed',
-        '✔ Test Case 2: Handles valid input... Passed',
-        '✔ Test Case 3: Handles edge cases... Passed',
-        'All tests passed. Congratulations!',
-      ];
-      let idx = 0;
-      const interval = setInterval(() => {
-        setOutput((prev) => prev + logs[idx] + '\n');
-        idx += 1;
-        if (idx >= logs.length) {
-          clearInterval(interval);
-          setIsRunning(false);
-          setShowSuccessModal(true);
-          setSubmissionResult({
-            success: true,
-            recordingUrl: null,
-            reviewSummary: 'Demo mode summary: solid implementation and clean handling of edge cases. Ready to proceed.',
-            points: { earned: 100, base: 100, bonus: 20, total: 120 },
-            offerQualified: true,
-            evaluation: {
-              scores: { understanding: 24, implementation: 24, validation: 24, communication: 22, total: 94, matchScore: 95 },
-              rationale: {},
-              risks: [],
-              nextInterviewQuestions: [],
-            } as any,
-          } as SubmissionResponsePayload);
-        }
-      }, 200);
-      return;
-    }
+          '✔ Test Case 2: Handles valid input... Passed',
+          '✔ Test Case 3: Handles edge cases... Passed',
+          'All tests passed. Congratulations!',
+        ];
+        let idx = 0;
+        const interval = setInterval(() => {
+          setOutput((prev) => prev + logs[idx] + '\n');
+          idx += 1;
+          if (idx >= logs.length) {
+            clearInterval(interval);
+            setIsRunning(false);
+          }
+        }, 200);
+        return;
+      }
 
     setIsRunning(true);
     setOutput('Running tests...\n');
@@ -289,7 +275,7 @@ export function ChallengeWorkspace({ task, onSubmit, demoMode = false }: Challen
             })
           );
         }
-        setShowSuccessModal(true);
+        router.push('/success');
         return;
       }
 
@@ -576,15 +562,6 @@ export function ChallengeWorkspace({ task, onSubmit, demoMode = false }: Challen
           </div>
         </div>
 
-        {/* Success Modal with Confetti */}
-        <SuccessModal
-          isOpen={showSuccessModal}
-          onClose={() => setShowSuccessModal(false)}
-          points={submissionResult?.points?.earned}
-          totalPoints={submissionResult?.points?.total}
-          offerQualified={submissionResult?.offerQualified}
-          evaluation={submissionResult?.evaluation ?? null}
-        />
       </div>
     </div>
   );
