@@ -19,10 +19,19 @@ export default function HomePage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [user, setUser] = useState<MockUser | null>(null);
+  const [isEnterprise, setIsEnterprise] = useState(false);
 
   // Check if user is logged in
   useEffect(() => {
-    setUser(getMockUser());
+    const u = getMockUser();
+    setUser(u);
+    if (typeof window !== 'undefined') {
+      const role = localStorage.getItem('shadowwork_role');
+      const enterpriseHint =
+        role === 'enterprise' ||
+        (u?.email && (u.email.includes('+enterprise') || u.email.includes('corp')));
+      setIsEnterprise(Boolean(enterpriseHint));
+    }
   }, []);
 
   const handleStartChallenge = () => {
@@ -62,9 +71,10 @@ export default function HomePage() {
             <span className="text-xl font-bold text-gray-900">ShadowWork</span>
           </div>
           <nav className="flex items-center gap-6">
-            <a href="#features" className="text-gray-600 hover:text-gray-900">Features</a>
-            <a href="#how-it-works" className="text-gray-600 hover:text-gray-900">How It Works</a>
-            <a href="/generate" className="text-blue-600 hover:text-blue-800 font-medium">🔬 Generator</a>
+            {/* Enterprise-only: Generator */}
+            {isEnterprise && (
+              <a href="/generate" className="text-blue-600 hover:text-blue-800 font-medium">🔬 Generator</a>
+            )}
             {user ? (
               <div className="flex items-center gap-3">
                 <button
