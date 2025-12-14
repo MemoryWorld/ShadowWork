@@ -9,6 +9,7 @@ import { Background } from '../components/ui/Background';
 import { User } from 'lucide-react';
 
 import { ProfileModal } from '@/components/ProfileModal';
+import { HowItWorksCarousel } from '@/components/HowItWorksCarousel';
 /**
  * Landing Page
  * 
@@ -214,13 +215,23 @@ export default function HomePage() {
 
         {/* How It Works */}
         <div id="how-it-works" className="mt-24">
-          <h2 className="text-4xl font-bold text-center mb-12">How It Works</h2>
-          <div className="grid md:grid-cols-4 gap-6">
-            <StepCard number={1} title="Start Challenge" description="Click and go - no setup needed" />
-            <StepCard number={2} title="Code Solution" description="Real editor, real runtime" />
-            <StepCard number={3} title="Run Tests" description="Validate your solution" />
-            <StepCard number={4} title="Submit" description="Send replay to company" />
-          </div>
+          <motion.h2
+            variants={fadeUp}
+            initial="hidden"
+            animate="visible"
+            custom={0}
+            className="text-4xl font-bold text-center mb-12"
+          >
+            How It Works
+          </motion.h2>
+          <motion.div
+            variants={fadeUp}
+            initial="hidden"
+            animate="visible"
+            custom={1}
+          >
+            <HowItWorksCarousel />
+          </motion.div>
         </div>
       </main>
 
@@ -258,23 +269,4 @@ function FeatureCard({
   );
 }
 
-function StepCard({
-  number,
-  title,
-  description,
-}: {
-  number: number;
-  title: string;
-  description: string;
-}) {
-  return (
-    <div className="text-center">
-      <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-purple-600 text-white rounded-full flex items-center justify-center text-xl font-bold mx-auto mb-4">
-        {number}
-      </div>
-      <h4 className="font-semibold text-lg mb-2">{title}</h4>
-      <p className="text-gray-600 text-sm">{description}</p>
-    </div>
-  );
-}
 

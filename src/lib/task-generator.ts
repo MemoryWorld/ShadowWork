@@ -1,21 +1,12 @@
 /**
- * Task Generator using OpenAI
+ * Task Generator using LLM (OpenAI or Ollama)
  * 
  * Transforms real GitHub bug fixes into obfuscated coding challenges
  * The "Magic" of ShadowWork - preserving technical complexity while hiding business context
  */
 
-import OpenAI from 'openai';
+import { createChatCompletion } from './llm-client';
 import type { Task } from '@/types';
-
-const openai = process.env.OPENAI_API_KEY
-  ? new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-      baseURL: process.env.OPENAI_BASE_URL,
-    })
-  : null;
-
-const model = process.env.OPENAI_MODEL || 'gpt-4o';
 
 /**
  * Generate a coding challenge from a Git diff
@@ -27,7 +18,8 @@ export async function generateTaskFromDiff(
   diffText: string,
   repoContext: { owner: string; repo: string }
 ): Promise<Task> {
-  if (!openai) {
+  const provider = process.env.LLM_PROVIDER || 'ollama';
+  if (provider === 'openai' && !process.env.OPENAI_API_KEY) {
     throw new Error('OpenAI API key not configured');
   }
 
@@ -140,20 +132,24 @@ Generate a complete, runnable coding challenge based on this bug. Change the bus
   console.log('[LLM] Generating task from diff...');
 
   try {
-    const completion = await openai.chat.completions.create({
-      model,
-      messages: [
+    const result = await createChatCompletion(
+      [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
       ],
-      response_format: { type: 'json_object' },
-      temperature: 0.8, // Higher creativity for better obfuscation
-      max_tokens: 4000,
-    });
+      {
+        response_format: { type: 'json_object' },
+        temperature: 0.8, // Higher creativity for better obfuscation
+        max_tokens: 4000,
+      }
+    );
 
-    const result = completion.choices[0].message.content;
-    const task = JSON.parse(result || '{}');
+    const content = result.content;
+    if (!content) {
+      throw new Error('Empty response from LLM');
+    }
 
+    const task = JSON.parse(content);
     console.log('[LLM] Task generated successfully:', task.title);
 
     return task as Task;

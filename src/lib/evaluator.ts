@@ -1,21 +1,12 @@
 import fs from 'fs';
 import path from 'path';
-import OpenAI from 'openai';
+import { createChatCompletion } from './llm-client';
 import type { CodeFileSnapshot, EvaluationResult } from '@/types';
 
 const evaluatorSpecPath = path.join(process.cwd(), 'specMd.md');
 const evaluatorSpec = fs.existsSync(evaluatorSpecPath)
   ? fs.readFileSync(evaluatorSpecPath, 'utf-8')
   : '';
-
-const openai = process.env.OPENAI_API_KEY
-  ? new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-      baseURL: process.env.OPENAI_BASE_URL,
-    })
-  : null;
-
-const model = process.env.OPENAI_MODEL || 'gpt-4o';
 
 export interface EvaluationInput {
   taskContext?: {
@@ -41,7 +32,9 @@ export interface EvaluationResponse {
 export async function evaluateSubmission(
   input: EvaluationInput
 ): Promise<EvaluationResponse> {
-  if (!openai) {
+  // 检查是否配置了 LLM
+  const provider = process.env.LLM_PROVIDER || 'ollama';
+  if (provider === 'openai' && !process.env.OPENAI_API_KEY) {
     return { success: false, error: 'OpenAI API key not configured' };
   }
 
@@ -65,11 +58,8 @@ export async function evaluateSubmission(
   )}\n\nProduce a response using the required JSON format. If information is missing, reflect that conservatively in both rationale and scores.`;
 
   try {
-    const completion = await openai.chat.completions.create({
-      model,
-      temperature: 0.2,
-      response_format: { type: 'json_object' },
-      messages: [
+    const result = await createChatCompletion(
+      [
         {
           role: 'system',
           content: evaluatorSpec,
@@ -79,9 +69,13 @@ export async function evaluateSubmission(
           content: userPrompt,
         },
       ],
-    });
+      {
+        temperature: 0.2,
+        response_format: { type: 'json_object' },
+      }
+    );
 
-    const content = completion.choices[0]?.message?.content;
+    const content = result.content;
 
     if (!content) {
       return { success: false, error: 'Empty evaluation response' };

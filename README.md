@@ -204,8 +204,14 @@ cp .env.example .env.local
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
 
-# OpenAI
-OPENAI_API_KEY=your_openai_key
+# LLM Provider (Ollama or OpenAI)
+LLM_PROVIDER=ollama
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_MODEL=qwen2.5:14b
+
+# OpenAI (可选，如果使用 OpenAI)
+# OPENAI_API_KEY=your_openai_key
+# OPENAI_MODEL=gpt-4o
 
 # Slack
 SLACK_WEBHOOK_URL=your_slack_webhook
