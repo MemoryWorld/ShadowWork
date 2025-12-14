@@ -44,11 +44,20 @@ export async function GET(request: NextRequest) {
     const mockMode = searchParams.get('mock') === 'true';
     const source = searchParams.get('source');
     const repo = searchParams.get('repo');
+    const techStackParam = searchParams.get('techStack') || '';
+    const userTechStack = techStackParam
+      .split(',')
+      .map((t) => t.trim())
+      .filter((t) => t.length > 0);
 
     // Mock Mode Switch - for offline testing
     if (mockMode) {
       console.log('[generate-task] Using Mock Mode');
-      return NextResponse.json(await loadMockTask());
+      const mock = await loadMockTask();
+      if (userTechStack.length) {
+        mock.techStack = Array.from(new Set([...(mock.techStack || []), ...userTechStack]));
+      }
+      return NextResponse.json(mock);
     }
 
     // GitHub Real-World Mode
@@ -78,6 +87,9 @@ export async function GET(request: NextRequest) {
         task.difficulty = analysis.difficulty;
         task.category = analysis.category;
         task.estimatedTime = analysis.estimatedTime;
+        if (userTechStack.length) {
+          task.techStack = Array.from(new Set([...(task.techStack || []), ...userTechStack]));
+        }
         
         console.log('[generate-task] Task generated:', task.title);
         

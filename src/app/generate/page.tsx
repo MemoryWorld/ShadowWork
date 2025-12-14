@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 /**
  * Task Generator Test Page
@@ -14,6 +14,64 @@ export default function GeneratePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [techInput, setTechInput] = useState('');
+  const [techStack, setTechStack] = useState<string[]>(() => {
+    if (typeof window === 'undefined') return [];
+    try {
+      const stored = localStorage.getItem('shadowwork_user_techstack');
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [resumeProfile, setResumeProfile] = useState<{
+    techStack: string[];
+    domains: string[];
+    recommendedRepos: string[];
+    roles?: string[];
+    taskHints?: string[];
+  }>({ techStack: [], domains: [], recommendedRepos: [], roles: [], taskHints: [] });
+  const [githubProfile] = useState(() => {
+    if (typeof window === 'undefined') return null as null | { username: string; suggestedRepos: string[] };
+    try {
+      const stored = localStorage.getItem('shadowwork_github_profile');
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [repoPrefilled, setRepoPrefilled] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const storedProfile = localStorage.getItem('shadowwork_resume_profile');
+      if (storedProfile) {
+        const parsed = JSON.parse(storedProfile);
+        setResumeProfile({
+          techStack: parsed.techStack || [],
+          domains: parsed.domains || [],
+          recommendedRepos: parsed.recommendedRepos || [],
+          roles: parsed.roles || [],
+          taskHints: parsed.taskHints || [],
+        });
+        // merge tech stack
+        if (parsed.techStack?.length) {
+          setTechStack((prev) => Array.from(new Set([...(prev || []), ...parsed.techStack])));
+        }
+      }
+    } catch {}
+    // Autofill repo from stored profile if available
+    if (!repoPrefilled) {
+      if (githubProfile?.suggestedRepos?.length) {
+        setRepoUrl(githubProfile.suggestedRepos[0]);
+        setRepoPrefilled(true);
+      } else if (resumeProfile.recommendedRepos?.length) {
+        setRepoUrl(resumeProfile.recommendedRepos[0]);
+        setRepoPrefilled(true);
+      }
+    }
+  }, [githubProfile, repoPrefilled, resumeProfile.recommendedRepos]);
 
   const popularRepos = [
     'vercel/next.js',
@@ -29,16 +87,16 @@ export default function GeneratePage() {
       return;
     }
 
-    setIsLoading(true);
-    setError(null);
-    setResult(null);
+      setIsLoading(true);
+      setError(null);
+      setResult(null);
 
-    try {
-      console.log('[Generate] Requesting task from:', repoUrl);
+      try {
+        console.log('[Generate] Requesting task from:', repoUrl);
 
-      const response = await fetch(
-        `/api/generate-task?source=github&repo=${encodeURIComponent(repoUrl)}`
-      );
+        const response = await fetch(
+        `/api/generate-task?source=github&repo=${encodeURIComponent(repoUrl)}&techStack=${encodeURIComponent(techStack.join(','))}`
+        );
 
       if (!response.ok) {
         throw new Error(`API error: ${response.statusText}`);
@@ -61,18 +119,18 @@ export default function GeneratePage() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-8">
       {/* Header */}
       <div className="max-w-4xl mx-auto mb-8">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">
-              🔬 Task Generator
-            </h1>
-            <p className="text-gray-600">
-              Test the real-world task generation pipeline
-            </p>
-          </div>
-          <button
-            onClick={() => window.location.href = '/'}
-            className="px-4 py-2 text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg hover:bg-white"
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-4xl font-bold text-gray-900 mb-2">
+                🔬 Task Generator
+              </h1>
+              <p className="text-gray-600">
+                Prefill with your profile (GitHub / resume / LinkedIn) to auto-suggest repo and tech stack
+              </p>
+            </div>
+            <button
+              onClick={() => window.location.href = '/'}
+              className="px-4 py-2 text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg hover:bg-white"
           >
             ← Back
           </button>
@@ -109,10 +167,58 @@ export default function GeneratePage() {
             </button>
           </div>
 
+          {/* Resume insights banner */}
+          {(resumeProfile.techStack.length > 0 || resumeProfile.recommendedRepos.length > 0) && (
+            <div className="mt-4 bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-900">
+              <div className="flex flex-wrap gap-2 mb-2">
+                <span className="px-2 py-1 rounded bg-blue-100 text-blue-700 text-xs font-semibold">Using resume insights</span>
+                {resumeProfile.domains.map((d) => (
+                  <span key={d} className="px-2 py-1 rounded bg-white/80 text-blue-800 text-xs font-medium border border-blue-200">
+                    {d}
+                  </span>
+                ))}
+              </div>
+              {resumeProfile.recommendedRepos.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {resumeProfile.recommendedRepos.map((repo) => (
+                    <button
+                      key={repo}
+                      onClick={() => setRepoUrl(repo)}
+                      className="px-3 py-1 bg-white text-blue-700 rounded-lg text-xs border border-blue-200 hover:bg-blue-100"
+                      disabled={isLoading}
+                    >
+                      {repo}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {resumeProfile.roles && resumeProfile.roles.length > 0 && (
+                <p className="mt-2 text-xs text-blue-800">
+                  Suggested roles: {resumeProfile.roles.join(', ')}
+                </p>
+              )}
+              {resumeProfile.taskHints && resumeProfile.taskHints.length > 0 && (
+                <p className="text-xs text-blue-800">
+                  Task hints: {resumeProfile.taskHints.join('; ')}
+                </p>
+              )}
+            </div>
+          )}
+
           {/* Quick Select */}
           <div>
-            <p className="text-xs text-gray-500 mb-2">Quick select popular repos:</p>
+            <p className="text-xs text-gray-500 mb-2">Quick select popular repos{githubProfile ? ' or from your GitHub handle' : ''}:</p>
             <div className="flex flex-wrap gap-2">
+              {(githubProfile?.suggestedRepos || []).map((repo) => (
+                <button
+                  key={repo}
+                  onClick={() => setRepoUrl(repo)}
+                  className="px-3 py-1 text-xs bg-indigo-100 text-indigo-700 hover:bg-indigo-200 rounded-lg transition-colors"
+                  disabled={isLoading}
+                >
+                  {repo}
+                </button>
+              ))}
               {popularRepos.map((repo) => (
                 <button
                   key={repo}
@@ -124,6 +230,61 @@ export default function GeneratePage() {
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Candidate Tech Stack */}
+          <div className="mt-6">
+            <p className="text-sm font-semibold text-gray-700 mb-2">Candidate tech stack (optional)</p>
+            <p className="text-xs text-gray-500 mb-2">Imported from resume/LinkedIn locally. Not uploaded to server; used as a hint for generation.</p>
+            <div className="flex gap-3 mb-2">
+              <input
+                type="text"
+                value={techInput}
+                onChange={(e) => setTechInput(e.target.value)}
+                placeholder="Add a tech e.g. React"
+                className="flex-1 px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none"
+                disabled={isLoading}
+              />
+              <button
+                onClick={() => {
+                  if (!techInput.trim()) return;
+                  const value = techInput.trim();
+                  setTechStack((prev) => Array.from(new Set([...prev, value])));
+                  setTechInput('');
+                  if (typeof window !== 'undefined') {
+                    localStorage.setItem('shadowwork_user_techstack', JSON.stringify(Array.from(new Set([...techStack, value]))));
+                  }
+                }}
+                disabled={isLoading}
+                className="px-4 py-3 bg-gray-900 text-white rounded-lg font-semibold hover:bg-gray-800 transition disabled:opacity-50"
+              >
+                Add
+              </button>
+            </div>
+            {techStack.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {techStack.map((tech) => (
+                  <span
+                    key={tech}
+                    className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium flex items-center gap-2"
+                  >
+                    {tech}
+                    <button
+                      onClick={() => {
+                        const next = techStack.filter((t) => t !== tech);
+                        setTechStack(next);
+                        if (typeof window !== 'undefined') {
+                          localStorage.setItem('shadowwork_user_techstack', JSON.stringify(next));
+                        }
+                      }}
+                      className="text-gray-500 hover:text-red-500"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Info Box */}
@@ -270,4 +431,3 @@ export default function GeneratePage() {
     </div>
   );
 }
-

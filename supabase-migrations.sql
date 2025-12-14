@@ -133,3 +133,24 @@ ON CONFLICT (id) DO NOTHING;
 -- SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'profiles';
 -- SELECT * FROM profiles LIMIT 5;
 
+-- ============================================
+-- 8. Resume insights storage (for AI personalization)
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS resume_insights (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_email TEXT,
+  tech_stack TEXT[],
+  domains TEXT[],
+  years_experience INTEGER,
+  roles TEXT[],
+  expertise TEXT[],
+  project_highlights JSONB,
+  task_hints TEXT[],
+  recommended_repos TEXT[],
+  summary TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Allow anon inserts if RLS disabled; adjust policies as needed.
+ALTER TABLE resume_insights DISABLE ROW LEVEL SECURITY;
