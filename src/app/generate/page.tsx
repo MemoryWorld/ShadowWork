@@ -484,14 +484,14 @@ export default function GeneratePage() {
                 </div>
 
                 {/* Actions */}
-                <div className="flex gap-3 pt-4 border-t">
+                <div className="flex flex-wrap gap-3 pt-4 border-t">
                   <button
                     onClick={() => {
                       // Save to localStorage for use in challenge
                       localStorage.setItem('custom_task', JSON.stringify(result));
                       window.location.href = '/challenge?source=custom';
                     }}
-                    className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold hover:shadow-lg"
+                    className="flex-1 min-w-[160px] px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl font-semibold shadow-sm hover:shadow-lg transition-all"
                   >
                     ▶️ Try This Challenge
                   </button>
@@ -500,14 +500,14 @@ export default function GeneratePage() {
                       navigator.clipboard.writeText(JSON.stringify(result, null, 2));
                       alert('Task JSON copied to clipboard!');
                     }}
-                    className="px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200"
+                    className="min-w-[140px] px-6 py-3 bg-gray-100 text-gray-800 rounded-xl font-semibold border border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition"
                   >
                     📋 Copy JSON
                   </button>
                   <button
                     onClick={handleGenerate}
                     disabled={isLoading}
-                    className="px-6 py-3 bg-white text-gray-800 rounded-lg font-semibold border border-gray-200 hover:bg-gray-50 disabled:opacity-50"
+                    className="min-w-[140px] px-6 py-3 bg-white text-gray-900 rounded-xl font-semibold border border-gray-200 hover:bg-gray-50 disabled:opacity-60 transition"
                   >
                     🔄 Regenerate
                   </button>
