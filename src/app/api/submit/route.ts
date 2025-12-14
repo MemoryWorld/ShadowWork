@@ -85,6 +85,9 @@ export async function POST(request: NextRequest) {
     const basePoints = 100;
     const speedBonus = sessionTime && sessionTime < 1800 ? 50 : 0; // Bonus if under 30 min
     const totalPoints = basePoints + speedBonus;
+    let userTotalPoints = totalPoints;
+    let offerQualified = false;
+    let reviewSummary: string | null = null;
 
     const normalizedSnapshot: CodeFileSnapshot[] = Array.isArray(codeSnapshot)
       ? codeSnapshot
@@ -109,20 +112,19 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const reviewSummary = await generateReviewSummary({
-      taskTitle: taskContext?.title,
-      points: {
-        earned: totalPoints,
-        base: basePoints,
-        bonus: speedBonus,
-        total: totalPoints,
-      },
-      offerQualified,
-      evaluation: evaluationResult,
-    });
-
     if (!supabase) {
       console.warn('[submit] Supabase not configured - skipping upload');
+      reviewSummary = await generateReviewSummary({
+        taskTitle: taskContext?.title,
+        points: {
+          earned: totalPoints,
+          base: basePoints,
+          bonus: speedBonus,
+          total: userTotalPoints,
+        },
+        offerQualified,
+        evaluation: evaluationResult,
+      });
       return NextResponse.json({ 
         success: true, 
         message: 'Submission received (Supabase not configured)',
@@ -158,35 +160,7 @@ export async function POST(request: NextRequest) {
 
     const recordingUrl = urlData?.publicUrl || '';
 
-    // Step 2: Save submission metadata with points
-    const { error: dbError } = await supabase
-      .from('submissions')
-      .insert({
-        user_id: userId,
-        task_id: taskId,
-        task_title: taskContext?.title || null,
-        recording_url: recordingUrl,
-        difficulty,
-        category,
-        tech_stack: techStack,
-        points_earned: basePoints,
-        speed_bonus: speedBonus,
-        session_time: sessionTime,
-        code_snapshot: normalizedSnapshot,
-        evaluation_json: evaluationResult,
-        review_summary: reviewSummary,
-        completed_at: new Date().toISOString(),
-      });
-
-    if (dbError) {
-      console.error('[submit] Database error:', dbError);
-      throw dbError;
-    }
-
-    // Step 2.5: Update user's total points and check offer qualification
-    let userTotalPoints = totalPoints;
-    let offerQualified = false;
-
+    // Step 2: Update user's total points and check offer qualification
     try {
       // Get current user points
       const { data: userData, error: userError } = await supabase
@@ -214,7 +188,46 @@ export async function POST(request: NextRequest) {
       console.warn('[submit] Points update skipped:', error);
     }
 
-    // Step 3: Send enhanced Slack notification with points
+    // Step 3: Generate review summary after we know offerQualified/userTotalPoints
+    reviewSummary = await generateReviewSummary({
+      taskTitle: taskContext?.title,
+      points: {
+        earned: totalPoints,
+        base: basePoints,
+        bonus: speedBonus,
+        total: userTotalPoints,
+      },
+      offerQualified,
+      evaluation: evaluationResult,
+    });
+
+    // Step 4: Save submission metadata with points
+    const { error: dbError } = await supabase
+      .from('submissions')
+      .insert({
+        user_id: userId,
+        task_id: taskId,
+        task_title: taskContext?.title || null,
+        recording_url: recordingUrl,
+        difficulty,
+        category,
+        tech_stack: techStack,
+        points_earned: basePoints,
+        speed_bonus: speedBonus,
+        session_time: sessionTime,
+        code_snapshot: normalizedSnapshot,
+        evaluation_json: evaluationResult,
+        review_summary: reviewSummary,
+        created_at: new Date().toISOString(),
+        completed_at: new Date().toISOString(),
+      });
+
+    if (dbError) {
+      console.error('[submit] Database error:', dbError);
+      throw dbError;
+    }
+
+    // Step 5: Send enhanced Slack notification with points
     const slackResult = await sendSlackNotification({
       userId,
       difficulty,
