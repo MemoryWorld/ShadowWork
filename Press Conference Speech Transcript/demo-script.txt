@@ -1,0 +1,75 @@
+ShadowWork – 4-minute demo script (read-aloud)
+
+0:00–0:30 Problem & specific pain
+Hi, I’m a PM and technical founder.
+In recruiting today, resumes tell us what candidates claim to know, but not how they actually work.
+Hiring managers still rely on CV keywords or generic coding tests, which don’t reflect real debugging, real trade-offs, or real engineering behavior.
+As a result, companies waste time screening the wrong people, and candidates are judged on signals that don’t match the job.
+We focus on one concrete pain: how to evaluate a specific candidate’s real engineering ability, using evidence instead of assumptions.
+
+0:30–0:55 Narrow scope
+We are not building a job marketplace or a full ATS.
+We focus on one realistic slice of the hiring process:
+letting candidates present real work through their resume, GitHub, and LinkedIn,
+and enabling companies to generate a task that is tailored to that specific candidate.
+
+0:55–2:30 Live demo walkthrough
+I’ll start from the candidate side.
+On screen is the Candidate Profile page.
+Here, a candidate uploads their resume and connects their LinkedIn and GitHub accounts.
+This creates a structured profile that reflects real experience, not just a static PDF.
+
+Now switching to the company view.
+In the Task Generator, the company enters the candidate’s email address.
+This links directly to that candidate’s profile.
+Instead of sending the same test to everyone,
+the system generates a task that is specific to this candidate’s background.
+
+I click Generate.
+The input is the candidate profile: resume data, GitHub activity, and linked information.
+The process analyzes this context and produces a realistic debugging task aligned with the candidate’s experience.
+The output is a runnable challenge with code, instructions, and tests.
+
+This generates a unique challenge link.
+This is exactly the link a company would email to a candidate after an initial screen.
+
+Now we switch back to the candidate experience.
+The candidate opens the link and enters the browser-based workspace.
+You see a file tree, code editor, terminal output, and a timer.
+No local setup is required.
+
+I open a file, make an edit, and run the tests.
+The terminal shows real output — this is a working prototype, not slides.
+When finished, the candidate clicks Submit.
+
+At submission, we capture the solution code, time spent, and interaction events.
+The candidate sees a confirmation page.
+
+Now switching to the company review view.
+Here is the submission detail page.
+The company sees a concise summary, risk indicators, and evidence from the session.
+If a session replay exists, it appears here.
+This gives reviewers something resumes never provide: observable behavior.
+
+2:30–3:15 Technical approach & key decisions
+Technically, the front end is built with Next.js.
+We use a browser-based execution environment to simulate real development without local installs.
+Candidate actions and code snapshots are recorded to support review and replay.
+
+Task generation is LLM-compatible and uses candidate context rather than generic prompts.
+For demos or limited credentials, we include fallback logic so the system remains reliable.
+
+Profiles and submissions can be stored centrally.
+If environment variables are missing, the system degrades gracefully so the prototype still runs.
+These decisions reflect real recruiting constraints: low friction, high signal, and reliability.
+
+3:15–3:50 Why this is useful in the real world
+This approach reduces resume noise by grounding evaluation in real work.
+It improves fairness by assessing candidates based on what they actually do, not how they market themselves.
+It saves time by letting companies focus only on candidates who show real capability.
+We are not solving hiring end-to-end — we solve one realistic and painful part of the process.
+
+3:50–4:00 Close & next steps
+ShadowWork enables candidate-specific evaluation using real code and real evidence.
+Next steps include deeper GitHub integration, automated scoring refinement, and ATS email workflows.
+Thanks for watching — happy to share the live demo.

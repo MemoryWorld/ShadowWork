@@ -1,0 +1,48 @@
+[Opening shot: Black screen. Slow piano music. Fade in to the ShadowWork logo in purple.]Good morning.Forty years ago, the résumé was invented.
+A single piece of paper that was supposed to tell the world who you are… and what you can do.It was a revolutionary idea… at the time.But today?
+Today, that piece of paper is broken.Every year, companies waste billions of hours reading résumés that lie.
+Every year, brilliant engineers get rejected because their story didn’t fit on one page.
+Every year, hiring managers interview candidates who look perfect on paper…
+…only to discover, weeks later, they can’t code their way out of a cardboard box.We’ve all lived this frustration.
+I’ve lived it. You’ve lived it.And I’m done accepting it.So today…
+I want to show you something different.[Cut to the landing page. Soft click sound.]This is ShadowWork.Zero-résumé.
+Proof-of-work.No more words on paper.
+No more keyword games.
+No more bias.Just pure skill… demonstrated.[Click “Connect LinkedIn” and “Upload Résumé”]When you arrive, we don’t ignore your past.
+We give you a starting score — based on your real LinkedIn contributions, your open-source work, your professional history.
+It’s your baseline. Fair.But that’s just the beginning.For companies, we built something even more powerful.[Switch to company view — click “Generator” button]They simply paste a link to their own GitHub repository.
+Our system intelligently pulls real production issues, anonymizes every trace of business logic and sensitive data…
+and in seconds, generates a perfect, privacy-safe coding challenge — drawn directly from the problems their team faces every day.No more inventing artificial test questions.
+No more LeetCode puzzles that have nothing to do with the actual job.Real problems.
+Real code.
+Real evaluation.[Cut back to candidate view — click “Start Challenge”]Now the candidate steps in.They get a full development environment…
+right in their browser.Real Node.js.
+Real terminal.
+Real tests.[Show the IDE, dark/light mode toggle, timer running]You can code in the light…
+or in the dark.
+Whatever makes you feel at home.You have 30 to 45 minutes.
+No installation.
+No setup.
+Just you… and a real engineering challenge pulled from a real company.When you’re ready…
+you hit Submit.[Click Submit → confetti + celebration screen]Your code is run.
+Your entire session is recorded.
+And then… artificial intelligence — acting as a senior engineer — reviews your solution.
+It scores you out of 100.
+It tells you what you did brilliantly…
+and where you can improve.No human bias.
+No politics.
+Just truth.And in that moment…
+the company receives your full replay.
+They watch you think.
+They watch you solve.
+They see the real you — fixing the exact kind of problem they need solved.[Cut to Slack notification popping up]That’s not a résumé.
+That’s proof.[Pause. Look straight into camera]This is how hiring should work.Simple.
+Honest.
+Human.We built ShadowWork in a weekend…
+because the world can’t wait any longer for better hiring.Résumés are dead.
+Proof-of-work is the future.And the future…
+starts today.Thank you.[Music swells. Fade to ShadowWork logo with tagline:]ShadowWork
+We don’t hire engineers.
+We let them work for you…
+before you even talk to them.[End]
+
