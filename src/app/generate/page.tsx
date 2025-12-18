@@ -45,6 +45,7 @@ export default function GeneratePage() {
   const [fallbackUsed, setFallbackUsed] = useState(false);
   const [lastRepo, setLastRepo] = useState('');
   const [mounted, setMounted] = useState(false);
+  const [role, setRole] = useState<'user' | 'enterprise' | 'unknown'>('unknown');
 
   useEffect(() => {
     setMounted(true);
@@ -99,10 +100,45 @@ export default function GeneratePage() {
   const showResumeBanner = mounted && (resumeProfile.techStack.length > 0 || resumeProfile.recommendedRepos.length > 0);
   const showRecommended = mounted && personalizedRepos.length > 0;
 
+  useEffect(() => {
+    const fetchMe = async () => {
+      try {
+        const res = await fetch('/api/me', { headers: { 'x-demo-role': typeof window !== 'undefined' ? localStorage.getItem('shadowwork_role') || '' : '' } });
+        if (!res.ok) throw new Error('me failed');
+        const data = await res.json();
+        setRole(data.role || 'user');
+      } catch {
+        setRole('user');
+      }
+    };
+    fetchMe();
+  }, []);
+
   if (!mounted) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-8">
         <div className="max-w-4xl mx-auto text-sm text-gray-600">Loading generator...</div>
+      </div>
+    );
+  }
+
+  if (role === 'user') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-8">
+        <div className="max-w-3xl mx-auto bg-white border border-gray-200 rounded-2xl p-8 shadow-sm">
+          <h1 className="text-2xl font-semibold text-gray-900 mb-2">Enterprise-only feature</h1>
+          <p className="text-gray-600">
+            This generator is available for enterprise accounts. Please switch to an enterprise login or request access.
+          </p>
+          <div className="mt-4 flex gap-3">
+            <button
+              onClick={() => window.location.href = '/'}
+              className="px-4 py-2 bg-gray-100 text-gray-800 rounded-lg border border-gray-200 hover:bg-gray-50"
+            >
+              Back to Home
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
